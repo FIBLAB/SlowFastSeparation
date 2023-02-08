@@ -329,16 +329,16 @@ if __name__ == '__main__':
     tau = 0.8
     n = 8
     
-    # # train
-    # sample_num = None
-    # generate_dataset(trace_num, round(tau/n, 3), sample_num, False)
-    # for seed in range(1,10+1):
-    #     is_print = True if len(workers)==0 else False
-    #     workers.append(Process(target=main, args=(trace_num, tau, n, is_print, False, seed), daemon=True))
-    #     workers[-1].start()
-    # while any([sub.exitcode==None for sub in workers]):
-    #     pass
-    # workers = []
+    # train
+    sample_num = None
+    generate_dataset(trace_num, round(tau/n, 3), sample_num, False)
+    for seed in range(1,10+1):
+        is_print = True if len(workers)==0 else False
+        workers.append(Process(target=main, args=(trace_num, tau, n, is_print, False, seed), daemon=True))
+        workers[-1].start()
+    while any([sub.exitcode==None for sub in workers]):
+        pass
+    workers = []
     
     # test
     for seed in range(1,10+1):

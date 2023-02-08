@@ -3,6 +3,8 @@ import torch
 
 
 def set_cpu_num(cpu_num):
+    if cpu_num <= 0: return
+    
     os.environ ['OMP_NUM_THREADS'] = str(cpu_num)
     os.environ ['OPENBLAS_NUM_THREADS'] = str(cpu_num)
     os.environ ['MKL_NUM_THREADS'] = str(cpu_num)

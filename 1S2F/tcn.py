@@ -338,8 +338,8 @@ if __name__ == '__main__':
     workers = []
     
     # test
-    # for seed in range(1,10+1):
-    #     main(trace_num, tau, n, True, True, seed)
+    for seed in range(1,10+1):
+        main(trace_num, tau, n, True, True, seed)
     #     is_print = True if len(workers)==0 else False
     #     workers.append(Process(target=main, args=(trace_num, tau, n, is_print, True, seed), daemon=True))
     #     workers[-1].start()

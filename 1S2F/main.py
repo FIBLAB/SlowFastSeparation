@@ -792,10 +792,8 @@ if __name__ == '__main__':
     trace_num = 100
     
     data_generator_pipeline(trace_num, total_t=15.1)
-    
-    # id_esitimate_pipeline(trace_num=trace_num)
-    
-    # slow_evolve_pipeline(trace_num=trace_num, n=10, long_test=False)
+    id_esitimate_pipeline(trace_num=trace_num)
+    slow_evolve_pipeline(trace_num=trace_num, n=10, long_test=False)
     slow_evolve_pipeline(trace_num=trace_num, n=10, long_test=True)
     
     torch.cuda.empty_cache()
