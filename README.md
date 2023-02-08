@@ -4,7 +4,7 @@ Codes for submitted paper in KDD'23: "Learning Slow and Fast System Dynamics via
 
 
 
-**The refactored version will comes soon!**
+**The refactored version coming soon!**
 
 
 
