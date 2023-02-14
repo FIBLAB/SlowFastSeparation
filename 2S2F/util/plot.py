@@ -14,10 +14,7 @@ def plot_epoch_test_log(tau, max_epoch):
             self.mse_c2 = [[] for _ in range(max_epoch)]
             self.mse_c3 = [[] for _ in range(max_epoch)]
             self.mse_c4 = [[] for _ in range(max_epoch)]
-            self.LB_id = [[] for _ in range(max_epoch)]
-            self.MiND_id = [[] for _ in range(max_epoch)]
-            self.MADA_id = [[] for _ in range(max_epoch)]
-            self.PCA_id = [[] for _ in range(max_epoch)]
+            self.MLE_id = [[] for _ in range(max_epoch)]
 
     fp = open(f'logs/time-lagged/tau_{tau}/test_log.txt', 'r')
     items = []
@@ -29,10 +26,7 @@ def plot_epoch_test_log(tau, max_epoch):
         mse_c3 = float(line[:-1].split(',')[4])
         mse_c4 = float(line[:-1].split(',')[5])
         epoch = int(line[:-1].split(',')[6])
-        LB_id = float(line[:-1].split(',')[7])
-        MiND_id = float(line[:-1].split(',')[8])
-        MADA_id = float(line[:-1].split(',')[9])
-        PCA_id = float(line[:-1].split(',')[10])
+        MLE_id = float(line[:-1].split(',')[7])
 
         find = False
         for M in items:
@@ -41,10 +35,7 @@ def plot_epoch_test_log(tau, max_epoch):
                 M.mse_c2[epoch].append(mse_c2)
                 M.mse_c3[epoch].append(mse_c3)
                 M.mse_c4[epoch].append(mse_c4)
-                M.LB_id[epoch].append(LB_id)
-                M.MiND_id[epoch].append(MiND_id)
-                M.MADA_id[epoch].append(MADA_id)
-                M.PCA_id[epoch].append(PCA_id)
+                M.MLE_id[epoch].append(MLE_id)
                 find = True
                     
         if not find:
@@ -53,10 +44,7 @@ def plot_epoch_test_log(tau, max_epoch):
             M.mse_c2[epoch].append(mse_c2)
             M.mse_c3[epoch].append(mse_c3)
             M.mse_c4[epoch].append(mse_c4)
-            M.LB_id[epoch].append(LB_id)
-            M.MiND_id[epoch].append(MiND_id)
-            M.MADA_id[epoch].append(MADA_id)
-            M.PCA_id[epoch].append(PCA_id)
+            M.MLE_id[epoch].append(MLE_id)
             items.append(M)
     fp.close()
 
@@ -65,29 +53,20 @@ def plot_epoch_test_log(tau, max_epoch):
         mse_c2_list = []
         mse_c3_list = []
         mse_c4_list = []
-        LB_id_list = []
-        MiND_id_list = []
-        MADA_id_list = []
-        PCA_id_list = []
+        MLE_id_list = []
         for epoch in range(max_epoch):
             mse_c1_list.append(np.mean(M.mse_c1[epoch]))
             mse_c2_list.append(np.mean(M.mse_c2[epoch]))
             mse_c3_list.append(np.mean(M.mse_c3[epoch]))
             mse_c4_list.append(np.mean(M.mse_c4[epoch]))
-            LB_id_list.append(np.mean(M.LB_id[epoch]))
-            MiND_id_list.append(np.mean(M.MiND_id[epoch]))
-            MADA_id_list.append(np.mean(M.MADA_id[epoch]))
-            PCA_id_list.append(np.mean(M.PCA_id[epoch]))
+            MLE_id_list.append(np.mean(M.MLE_id[epoch]))
 
     plt.figure(figsize=(12,9))
     plt.title(f'tau = {M.tau}')
     ax1 = plt.subplot(2,1,1)
     plt.xlabel('epoch')
     plt.ylabel('ID')
-    plt.plot(range(max_epoch), LB_id_list, label='LB')
-    # plt.plot(range(max_epoch), MiND_id_list, label='MiND_ML')
-    # plt.plot(range(max_epoch), MADA_id_list, label='MADA')
-    # plt.plot(range(max_epoch), PCA_id_list, label='PCA')
+    plt.plot(range(max_epoch), MLE_id_list, label='LB')
     plt.legend()
     ax2 = plt.subplot(2,1,2)
     plt.xlabel('epoch')
@@ -110,13 +89,10 @@ def plot_id_per_tau(tau_list, id_epoch):
         for line in fp.readlines():
             seed = int(line[:-1].split(',')[1])
             epoch = int(line[:-1].split(',')[6])
-            LB_id = float(line[:-1].split(',')[7])
-            MiND_id = float(line[:-1].split(',')[8])
-            MADA_id = float(line[:-1].split(',')[9])
-            PCA_id = float(line[:-1].split(',')[10])
+            MLE_id = float(line[:-1].split(',')[7])
 
             if epoch in id_epoch:
-                id_per_tau[i].append([LB_id, MiND_id, MADA_id, PCA_id])
+                id_per_tau[i].append([MLE_id])
     
     for i in range(len(tau_list)):
         id_per_tau[i] = np.mean(id_per_tau[i], axis=0)
@@ -124,14 +100,13 @@ def plot_id_per_tau(tau_list, id_epoch):
 
     round_id_per_tau = []
     for id in id_per_tau:
-        round_id_per_tau.append([round(id[0]),round(id[1]),round(id[2]),round(id[3])])
+        round_id_per_tau.append([round(id[0])])
     round_id_per_tau = np.array(round_id_per_tau)
 
     import scienceplots
     plt.style.use(['science'])
     plt.figure(figsize=(6,6))
     plt.rcParams.update({'font.size':16})
-    # for i, item in enumerate(['MLE','MiND','MADA','PCA']):
     for i, item in enumerate(['MLE']):
         plt.plot(tau_list, id_per_tau[:,i], marker="o", markersize=6, label="ID")
         plt.plot(tau_list, round_id_per_tau[:,i], marker="^", markersize=6, label="ID-rounding")

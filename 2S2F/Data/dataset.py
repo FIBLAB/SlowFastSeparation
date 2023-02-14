@@ -46,22 +46,3 @@ class _2S2FDataset(Dataset):
 
     def __len__(self):
         return len(self.data)
-    
-#     def plot(self):
-        
-#         inputs = []
-#         targets = []
-#         for i in range(self.__len__()):
-#             input, target, _ = self.__getitem__(i)
-#             inputs.append(input[0,0,2])
-#             targets.append(target[0,0,2])
-#         import matplotlib.pyplot as plt
-#         plt.figure()
-#         plt.plot(inputs[:100], label='input')
-#         plt.plot(targets[:100], label='target')
-#         plt.legend()
-#         plt.savefig('data.pdf', dpi=300)
-
-# data_path = 'Data/data/tau_' + str(0.15)
-# j = _2S2FDataset(data_path, 'val', length=10)
-# j.plot()
