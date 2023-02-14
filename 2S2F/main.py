@@ -826,8 +826,8 @@ if __name__ == '__main__':
     
     # main functions
     data_generator_pipeline(trace_num, total_t, dt) # TODO: refactor
-    # ID_Estimate(trace_num, T, id_max_epoch, parallel, cpu_num, seed_list)
+    ID_Estimate(trace_num, T, id_max_epoch, parallel, cpu_num, seed_list)
     Learn_Slow_Fast(trace_num, tau_s, tau_1, slow_id, pretrain_epoch, parallel, cpu_num, seed_list, mode='train', learn_max_epoch=learn_max_epoch)
-    # Learn_Slow_Fast(trace_num, tau_s, tau_1, slow_id, pretrain_epoch, parallel, cpu_num, seed_list, mode='test', learn_max_epoch=learn_max_epoch)
+    Learn_Slow_Fast(trace_num, tau_s, tau_1, slow_id, pretrain_epoch, parallel, cpu_num, seed_list, mode='test', learn_max_epoch=learn_max_epoch)
 
     torch.cuda.empty_cache()
