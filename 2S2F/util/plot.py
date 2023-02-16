@@ -316,5 +316,5 @@ def plot_evolve(length):
 
 if __name__ == '__main__':
     
-    # plot_2s2f_autocorr()
+    plot_2s2f_autocorr()
     plot_evolve(0.8)

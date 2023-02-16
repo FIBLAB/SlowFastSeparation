@@ -122,14 +122,14 @@ class EVOLVER(nn.Module):
             nn.Tanh(),
         )
 
-        # # (batchsize, slow_dim)-->(batchsize, redundant_dim)
-        # self.encoder_3 = nn.Sequential(
-        #     nn.Linear(slow_dim, 64, bias=True),
-        #     nn.Tanh(),
-        #     nn.Dropout(p=0.01),
-        #     nn.Linear(64, redundant_dim, bias=True),
-        #     nn.Tanh(),
-        # )
+        # (batchsize, slow_dim)-->(batchsize, redundant_dim)
+        self.encoder_3 = nn.Sequential(
+            nn.Linear(slow_dim, 32, bias=True),
+            nn.Tanh(),
+            nn.Dropout(p=0.01),
+            nn.Linear(32, redundant_dim, bias=True),
+            nn.Tanh(),
+        )
         
         # (batchsize, slow_dim)-->(batchsize,1,1,4)
         self.decoder = nn.Sequential(
@@ -146,18 +146,13 @@ class EVOLVER(nn.Module):
             nn.Unflatten(-1, (1, in_channels, input_1d_width))
         )
         
-        # self.K_opt = Koopman_OPT(slow_dim+redundant_dim)
-        self.K_opt = Koopman_OPT(slow_dim)
+        self.K_opt = Koopman_OPT(slow_dim+redundant_dim)
+        # self.K_opt = Koopman_OPT(slow_dim)
         self.lstm = LSTM_OPT(in_channels, input_1d_width, hidden_dim=64, layer_num=2, tau_s=tau_s, device=device)
 
         # scale inside the model
         self.register_buffer('min', torch.zeros(in_channels, input_1d_width, dtype=torch.float32))
         self.register_buffer('max', torch.ones(in_channels, input_1d_width, dtype=torch.float32))
-
-    def obs2embed(self, obs):
-        # (batchsize,1,1,4)-->(batchsize, embed_dim)
-        embed = self.encoder_1(obs)
-        return embed
     
     def obs2slow(self, obs):
         # (batchsize,1,1,4)-->(batchsize, embed_dim)-->(batchsize, slow_dim)
@@ -170,16 +165,16 @@ class EVOLVER(nn.Module):
         obs = self.decoder(slow_var)
         return obs
 
-    # def slow2koopman(self, slow_var):
-    #     # (batchsize, slow_dim)-->(batchsize, koopman_dim = slow_dim + redundant_dim)
-    #     redundant_var = self.encoder_3(slow_var)
-    #     koopman_var = torch.concat((slow_var, redundant_var), dim=-1)
-    #     return koopman_var
+    def slow2koopman(self, slow_var):
+        # (batchsize, slow_dim)-->(batchsize, koopman_dim = slow_dim + redundant_dim)
+        redundant_var = self.encoder_3(slow_var)
+        koopman_var = torch.concat((slow_var, redundant_var), dim=-1)
+        return koopman_var
 
-    # def koopman2slow(self, koopman_var):
-    #     # (batchsize, koopman_dim = slow_dim + redundant_dim)-->(batchsize, slow_dim)
-    #     slow_var = koopman_var[:,:self.slow_dim]
-    #     return slow_var
+    def koopman2slow(self, koopman_var):
+        # (batchsize, koopman_dim = slow_dim + redundant_dim)-->(batchsize, slow_dim)
+        slow_var = koopman_var[:,:self.slow_dim]
+        return slow_var
 
     def koopman_evolve(self, koopman_var, tau=1.):
         
