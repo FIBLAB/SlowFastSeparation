@@ -29,13 +29,13 @@ def findNearestPoint(data_t, start=0, object_t=10.0):
 def time_discretization(seed, total_t, dt=None, is_print=False):
     """Time-forward NearestNeighbor interpolate to discretizate the time"""
 
-    data = np.load(f'Data/origin/{seed}/origin.npz')
+    data = np.load(f'Data/1S2F/origin/{seed}/origin.npz')
     data_t = data['t']
     data_X = data['X']
     data_Y = data['Y']
     data_Z = data['Z']
 
-    dt = 5e-6 if dt is None else dt # 5e-6是手动1s2f这个实验仿真得出的时间间隔大概平均值
+    dt = 5e-6 if dt is None else dt
     current_t = 0.0
     index = 0
     t, X, Y, Z = [], [], [], []
@@ -77,51 +77,49 @@ def time_discretization(seed, total_t, dt=None, is_print=False):
         bottom=0.15,
         wspace=0.2
     )
-    plt.savefig(f'Data/origin/{seed}/data.pdf', dpi=300)
+    plt.savefig(f'Data/1S2F/origin/{seed}/data.pdf', dpi=300)
 
-    np.savez(f'Data/origin/{seed}/data.npz', dt=dt, t=t, X=X, Y=Y, Z=Z)
-# time_discretization(1, total_t=15.1, dt=0.01)
+    np.savez(f'Data/1S2F/origin/{seed}/data.npz', dt=dt, t=t, X=X, Y=Y, Z=Z)
 
-def generate_original_data(trace_num, total_t):
 
-    os.makedirs('Data/origin', exist_ok=True)
+def generate_original_data(trace_num, total_t, dt, parallel):
+
+    os.makedirs('Data/1S2F/origin', exist_ok=True)
 
     # generate original data by gillespie algorithm
     subprocess = []
     for seed in range(1, trace_num+1):
-        if not os.path.exists(f'Data/origin/{seed}/origin.npz'):
+        if not os.path.exists(f'Data/1S2F/origin/{seed}/origin.npz'):
             IC = [np.random.randint(5,200), np.random.randint(5,100), np.random.randint(0,5000)]
-            subprocess.append(Process(target=generate_origin, args=(total_t, seed, IC), daemon=True))
-            subprocess[-1].start()
-            # print(f'\rStart process[seed={seed}] for origin data' + ' '*30)
-        else:
-            pass
+            if parallel:
+                subprocess.append(Process(target=generate_origin, args=(total_t, seed, IC), daemon=True))
+                subprocess[-1].start()
+            else:
+                generate_origin(total_t, seed, IC)
     while any([subp.exitcode == None for subp in subprocess]):
         pass
-    print()
     
     # time discretization by time-forward NearestNeighbor interpolate
     subprocess = []
     for seed in range(1, trace_num+1):
-        if not os.path.exists(f'Data/origin/{seed}/data.npz'):
-            dt = 1e-2
+        if not os.path.exists(f'Data/1S2F/origin/{seed}/data.npz'):
             is_print = len(subprocess)==0
-            subprocess.append(Process(target=time_discretization, args=(seed, total_t, dt, is_print), daemon=True))
-            subprocess[-1].start()
-            # print(f'\rStart process[seed={seed}] for time-discrete data' + ' '*30)
+            if parallel:
+                subprocess.append(Process(target=time_discretization, args=(seed, total_t, dt, is_print), daemon=True))
+                subprocess[-1].start()
+            else:
+                time_discretization(seed, total_t, dt, is_print)
     while any([subp.exitcode == None for subp in subprocess]):
         pass
 
-    print(f'save origin data form seed 1 to {trace_num} at Data/origin/')
+    print(f'save origin data form seed 1 to {trace_num} at Data/1S2F/origin/')
     
     
-def generate_dataset(trace_num, tau, sample_num=None, is_print=False, sequence_length=None, neural_ode=False):
+def generate_dataset(trace_num, tau, sample_num=None, is_print=False, sequence_length=None):
 
-    if not neural_ode and (sequence_length is not None) and os.path.exists(f"Data/data/tau_{tau}/train_{sequence_length}.npz") and os.path.exists(f"Data/data/tau_{tau}/val_{sequence_length}.npz") and os.path.exists(f"Data/data/tau_{tau}/test_{sequence_length}.npz"):
+    if (sequence_length is not None) and os.path.exists(f"Data/1S2F/data/tau_{tau}/train_{sequence_length}.npz") and os.path.exists(f"Data/1S2F/data/tau_{tau}/val_{sequence_length}.npz") and os.path.exists(f"Data/1S2F/data/tau_{tau}/test_{sequence_length}.npz"):
         return
-    elif not neural_ode and (sequence_length is None) and os.path.exists(f"Data/data/tau_{tau}/train.npz") and os.path.exists(f"Data/data/tau_{tau}/val.npz") and os.path.exists(f"Data/data/tau_{tau}/test.npz"):
-        return
-    elif neural_ode and (sequence_length is None) and os.path.exists(f"Data/data/tau_{tau}/neural_ode_train.npz") and os.path.exists(f"Data/data/tau_{tau}/neural_ode_val.npz") and os.path.exists(f"Data/data/tau_{tau}/neural_ode_test.npz"):
+    elif (sequence_length is None) and os.path.exists(f"Data/1S2F/data/tau_{tau}/train.npz") and os.path.exists(f"Data/1S2F/data/tau_{tau}/val.npz") and os.path.exists(f"Data/1S2F/data/tau_{tau}/test.npz"):
         return
 
     # load original data
@@ -129,7 +127,7 @@ def generate_dataset(trace_num, tau, sample_num=None, is_print=False, sequence_l
     data = []
     iter = tqdm(range(1, trace_num+1)) if is_print else range(1, trace_num+1)
     for trace_id in iter:
-        tmp = np.load(f"Data/origin/{trace_id}/data.npz")
+        tmp = np.load(f"Data/1S2F/origin/{trace_id}/data.npz")
         dt = tmp['dt']
         X = np.array(tmp['X'])[:, np.newaxis, np.newaxis] # (sample_num, channel, feature_num)
         Y = np.array(tmp['Y'])[:, np.newaxis, np.newaxis]
@@ -142,7 +140,7 @@ def generate_dataset(trace_num, tau, sample_num=None, is_print=False, sequence_l
     if is_print: print(f'tau[{tau}]', 'data shape', data.shape, '# (trace_num, time_length, channel, feature_num)')
 
     # save statistic information
-    data_dir = f"Data/data/tau_{tau}"
+    data_dir = f"Data/1S2F/data/tau_{tau}"
     os.makedirs(data_dir, exist_ok=True)
     np.savetxt(data_dir + "/data_mean.txt", np.mean(data, axis=(0,1)))
     np.savetxt(data_dir + "/data_std.txt", np.std(data, axis=(0,1)))
@@ -214,66 +212,27 @@ def generate_dataset(trace_num, tau, sample_num=None, is_print=False, sequence_l
         if is_print: print(f'tau[{tau}]', f"after process", np.shape(sequences))
 
         # save
-        if neural_ode:
-            for i in range(len(parallel_sequences)):
-                parallel_sequences[i] = np.array(parallel_sequences[i])
-            parallel_sequences = np.array(parallel_sequences)
-            np.savez(data_dir+f'/neural_ode_{item}.npz', data=parallel_sequences[:,:,0])
+        if not seq_none:
+            np.savez(data_dir+f'/{item}_{sequence_length}.npz', data=sequences)
         else:
-            if not seq_none:
-                np.savez(data_dir+f'/{item}_{sequence_length}.npz', data=sequences)
-            else:
-                np.savez(data_dir+f'/{item}.npz', data=sequences)
+            np.savez(data_dir+f'/{item}.npz', data=sequences)
 
-            # plot
-            if seq_none:
-                plt.figure(figsize=(16,10))
-                plt.title(f'{item.capitalize()} Data' + f' | sample_num[{len(sequences) if sample_num is None else sample_num}]')
-                for i in range(3):
-                    ax = plt.subplot(3,1,i+1)
-                    ax.set_title(['X','Y','Z'][i])
-                    plt.plot(sequences[:, 0, 0, i])
-                plt.subplots_adjust(left=0.05, bottom=0.05,  right=0.95,  top=0.95,  hspace=0.35)
-                plt.savefig(data_dir+f'/{item}_input.pdf', dpi=300)
+        # plot
+        if seq_none:
+            plt.figure(figsize=(16,10))
+            plt.title(f'{item.capitalize()} Data' + f' | sample_num[{len(sequences) if sample_num is None else sample_num}]')
+            for i in range(3):
+                ax = plt.subplot(3,1,i+1)
+                ax.set_title(['X','Y','Z'][i])
+                plt.plot(sequences[:, 0, 0, i])
+            plt.subplots_adjust(left=0.05, bottom=0.05,  right=0.95,  top=0.95,  hspace=0.35)
+            plt.savefig(data_dir+f'/{item}_input.pdf', dpi=300)
 
-                plt.figure(figsize=(16,10))
-                plt.title(f'{item.capitalize()} Data' + f' | sample_num[{len(sequences) if sample_num is None else sample_num}]')
-                for i in range(3):
-                    ax = plt.subplot(3,1,i+1)
-                    ax.set_title(['X','Y','Z'][i])
-                    plt.plot(sequences[:, sequence_length-1, 0, i])
-                plt.subplots_adjust(left=0.05, bottom=0.05,  right=0.95,  top=0.95,  hspace=0.35)
-                plt.savefig(data_dir+f'/{item}_target.pdf', dpi=300)
-            
-        
-def generate_informer_dataset(trace_num, sample_num=None):
-    
-    # load original data
-    simdata = []
-    for trace_id in tqdm(range(1, trace_num+1)):
-        tmp = np.load(f"Data/origin/{trace_id}/data.npz")
-        X = np.array(tmp['X'])[:, np.newaxis, np.newaxis] # (sample_num, channel, feature_num)
-        Y = np.array(tmp['Y'])[:, np.newaxis, np.newaxis]
-        Z = np.array(tmp['Z'])[:, np.newaxis, np.newaxis]
-
-        trace = np.concatenate((X, Y, Z), axis=-1)
-        simdata.append(trace[np.newaxis])
-    simdata = np.concatenate(simdata, axis=0)
-
-    for tau in [0.3, 3.0, 15.0]:
-        # subsampling
-        dt = tmp['dt']
-        subsampling = int(tau/dt) if tau!=0. else 1
-        data = simdata[:, ::subsampling]
-        print(f'tau[{tau}]', 'data shape', data.shape, '# (trace_num, time_length, channel, feature_num)')
-        
-        import pandas as pd
-        data = np.concatenate(data, axis=0)[:,0]
-        df = pd.DataFrame(data, columns=['X','Y','Z'])
-        
-        dt = pd.date_range('2016-07-01 00:00:00', periods=len(df), freq='h')
-        df['date'] = dt
-        df = df[['date','X','Y','Z']]
-        
-        df.to_csv(f'tau_{tau}.csv', index=False)
-# generate_informer_dataset(trace_num=100, sample_num=None)
+            plt.figure(figsize=(16,10))
+            plt.title(f'{item.capitalize()} Data' + f' | sample_num[{len(sequences) if sample_num is None else sample_num}]')
+            for i in range(3):
+                ax = plt.subplot(3,1,i+1)
+                ax.set_title(['X','Y','Z'][i])
+                plt.plot(sequences[:, sequence_length-1, 0, i])
+            plt.subplots_adjust(left=0.05, bottom=0.05,  right=0.95,  top=0.95,  hspace=0.35)
+            plt.savefig(data_dir+f'/{item}_target.pdf', dpi=300)

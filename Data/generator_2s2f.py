@@ -20,7 +20,7 @@ def system_4d(y0, t, para=(0.025,3)):
     return [dc1, dc2, dc3, dc4]
 
 
-def generate_original_data(trace_num, total_t=5, dt=0.0001, save=True, plot=False):
+def generate_original_data(trace_num, total_t=5, dt=0.0001, save=True, plot=False, parallel=False):
     
     def solve_1_trace(trace_id=0, total_t=5, dt=0.001):
         
@@ -38,11 +38,11 @@ def generate_original_data(trace_num, total_t=5, dt=0.0001, save=True, plot=Fals
             plt.plot(t, sol[:,2], label='c3')
             plt.plot(t, sol[:,3], label='c4')
             plt.legend()
-            plt.savefig(f'Data/origin/2s2f_{trace_id}.pdf', dpi=100)
+            plt.savefig(f'Data/2S2F/origin/2s2f_{trace_id}.pdf', dpi=100)
         
         return sol
     
-    if save and os.path.exists('Data/origin/origin.npz'): return
+    if save and os.path.exists('Data/2S2F/origin/origin.npz'): return
     
     trace = []
     for trace_id in tqdm(range(1, trace_num+1)):
@@ -50,29 +50,31 @@ def generate_original_data(trace_num, total_t=5, dt=0.0001, save=True, plot=Fals
         trace.append(sol)
     
     if save: 
-        os.makedirs('Data/origin', exist_ok=True)
-        np.savez('Data/origin/origin.npz', trace=trace, dt=dt, T=total_t)
-        print(f'save origin data form seed 1 to {trace_num} at Data/origin/')
+        os.makedirs('Data/2S2F/origin', exist_ok=True)
+        np.savez('Data/2S2F/origin/origin.npz', trace=trace, dt=dt, T=total_t)
+        print(f'save origin data form seed 1 to {trace_num} at Data/2S2F/origin/')
+    
+    plot_c3_c4_trajectory() # plot c3,c4 trajectory
 
     return trace
 
     
 def generate_dataset(trace_num, tau, sample_num=None, is_print=False, sequence_length=None):
 
-    if (sequence_length is not None) and os.path.exists(f"Data/data/tau_{tau}/train_{sequence_length}.npz") and os.path.exists(f"Data/data/tau_{tau}/val_{sequence_length}.npz") and os.path.exists(f"Data/data/tau_{tau}/test_{sequence_length}.npz"):
+    if (sequence_length is not None) and os.path.exists(f"Data/2S2F/data/tau_{tau}/train_{sequence_length}.npz") and os.path.exists(f"Data/2S2F/data/tau_{tau}/val_{sequence_length}.npz") and os.path.exists(f"Data/2S2F/data/tau_{tau}/test_{sequence_length}.npz"):
         return
-    elif (sequence_length is None) and os.path.exists(f"Data/data/tau_{tau}/train.npz") and os.path.exists(f"Data/data/tau_{tau}/val.npz") and os.path.exists(f"Data/data/tau_{tau}/test.npz"):
+    elif (sequence_length is None) and os.path.exists(f"Data/2S2F/data/tau_{tau}/train.npz") and os.path.exists(f"Data/2S2F/data/tau_{tau}/val.npz") and os.path.exists(f"Data/2S2F/data/tau_{tau}/test.npz"):
         return
     
     # load original data
     if is_print: print('loading original trace data:')
-    tmp = np.load(f"Data/origin/origin.npz")
+    tmp = np.load(f"Data/2S2F/origin/origin.npz")
     dt = tmp['dt']
     data = np.array(tmp['trace'])[:trace_num,:,np.newaxis] # (trace_num, time_length, channel, feature_num)
     if is_print: print(f'tau[{tau}]', 'data shape', data.shape, '# (trace_num, time_length, channel, feature_num)')
 
     # save statistic information
-    data_dir = f"Data/data/tau_{tau}"
+    data_dir = f"Data/2S2F/data/tau_{tau}"
     os.makedirs(data_dir, exist_ok=True)
     np.savetxt(data_dir + "/data_mean.txt", np.mean(data, axis=(0,1)))
     np.savetxt(data_dir + "/data_std.txt", np.std(data, axis=(0,1)))
@@ -216,5 +218,5 @@ def plot_c3_c4_trajectory():
         if i == 1:
             plt.legend()
         plt.subplots_adjust(bottom=0., top=1.)
-        plt.savefig(f"Data/origin/c{2+i+1}.pdf", dpi=300)
+        plt.savefig(f"Data/2S2F/origin/c{2+i+1}.pdf", dpi=300)
         plt.close()

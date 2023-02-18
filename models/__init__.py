@@ -1,6 +1,9 @@
 from torch import nn
-from .time_lagged import TIME_LAGGED_AE
-from .slow_fast_evolve import EVOLVER
+from .tcn import TCN
+from .lstm import LSTM
+from .neural_ode import NeuralODE
+from .time_lagged import TimeLaggedAE
+from .slow_fast_evolve import DynamicsEvolver
 
 
 def weights_normal_init(m):

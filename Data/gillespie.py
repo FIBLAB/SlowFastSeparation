@@ -89,7 +89,7 @@ def generate_origin(total_t=None, seed=729, IC=[100,40,2500]):
     time.sleep(1.0)
 
     seed_everything(seed)
-    os.makedirs(f'Data/origin/{seed}/', exist_ok=True)
+    os.makedirs(f'Data/1S2F/origin/{seed}/', exist_ok=True)
 
     num_elements = 3
     system = System(num_elements)
@@ -129,12 +129,12 @@ def generate_origin(total_t=None, seed=729, IC=[100,40,2500]):
         bottom=0.15,
         wspace=0.2
     )
-    plt.savefig(f'Data/origin/{seed}/origin.pdf', dpi=500)
+    plt.savefig(f'Data/1S2F/origin/{seed}/origin.pdf', dpi=500)
     
     # calculate average dt
     digit = f'{np.average(np.diff(t)):.20f}'.count("0")
     avg = np.round(np.average(np.diff(t)), digit)
 
-    np.savez(f'Data/origin/{seed}/origin.npz', t=t, X=X, Y=Y, Z=Z, dt=avg)
+    np.savez(f'Data/1S2F/origin/{seed}/origin.npz', t=t, X=X, Y=Y, Z=Z, dt=avg)
 
     # print(f'\nSeed[{seed}] subprocess finished!\n')

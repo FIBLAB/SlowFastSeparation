@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 import torch
 from torch import nn
 
@@ -96,10 +95,10 @@ class LSTM_OPT(nn.Module):
         return y
 
 
-class EVOLVER(nn.Module):
+class DynamicsEvolver(nn.Module):
     
     def __init__(self, in_channels, input_1d_width, embed_dim, slow_dim, redundant_dim, tau_s, device):
-        super(EVOLVER, self).__init__()
+        super(DynamicsEvolver, self).__init__()
 
         self.slow_dim = slow_dim
         

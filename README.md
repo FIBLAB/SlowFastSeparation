@@ -21,32 +21,22 @@ Codes for submitted paper in KDD'23: "Learning Slow and Fast System Dynamics via
 
 - Matplotlib
 
+- pytorch_lightning
+
+- tqdm
+
+
 # Usage
 
-Train and test model in 1S2F system:
+Train and test models in 1S2F and 2S2F system:
 
 ```shell
-cd 1S2F
 
-python main.py # for our model
+./OURS.sh # for our model
 
-python lstm.py # for LSTM
+./LSTM.sh # for LSTM
 
-python tcn.py # for TCN
+./TCN.sh # for TCN
 
-python neural_ode.py # for Neural ODE
-```
-
-Train and test model in 2S2F system:
-
-```shell
-cd 2S2F
-
-python main.py # for our model
-
-python lstm.py # for LSTM
-
-python tcn.py # for TCN
-
-python neural_ode.py # for Neural ODE
+./NeuralODE # for Neural ODE
 ```
