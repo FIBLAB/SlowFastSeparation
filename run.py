@@ -263,8 +263,8 @@ if __name__ == '__main__':
     parser.add_argument('--dt', type=float, default=0.01, help='Time step of each simulation trajectories')
     parser.add_argument('--tau_1', type=float, default=0.1, help='params for ID-driven Time Scale Selection')
     parser.add_argument('--tau_N', type=float, default=3.0, help='params for ID-driven Time Scale Selection')
-    parser.add_argument('--tau_s', type=float, default=0.8, help='Approprate time scale for fast-slow separation')  # TODO: 需要加一个自动从time-lagged结果里选择tau_s的函数功能
-    parser.add_argument('--slow_dim', type=int, default=2, help='Intrinsic dimension of slow dynamics')             # TODO: 同上
+    parser.add_argument('--tau_s', type=float, default=0.8, help='Approprate time scale for fast-slow separation')  
+    parser.add_argument('--slow_dim', type=int, default=2, help='Intrinsic dimension of slow dynamics')             
     parser.add_argument('--koopman_dim', type=int, default=4, help='Dimension of Koopman invariable space')
     parser.add_argument('--id_epoch', type=int, default=100, help='Max training epoch of ID-driven Time Scale Selection')
     parser.add_argument('--learn_epoch', type=int, default=100, help='Max training epoch of Fast-Slow Learning')
