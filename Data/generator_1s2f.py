@@ -1,7 +1,8 @@
 import os
 import numpy as np
 from tqdm import tqdm
-import matplotlib.pyplot as plt
+import scienceplots
+import matplotlib.pyplot as plt;plt.style.use(['science']);plt.rcParams.update({'font.size':16})
 from multiprocessing import Process
 import warnings;warnings.simplefilter('ignore')
 
@@ -9,7 +10,7 @@ from .gillespie import generate_origin
 
 
 def findNearestPoint(data_t, start=0, object_t=10.0):
-    """Find the nearest time point to object time"""
+    '''Find the nearest time point to object time.'''
 
     index = start
 
@@ -27,7 +28,17 @@ def findNearestPoint(data_t, start=0, object_t=10.0):
 
 
 def time_discretization(seed, total_t, dt=None, is_print=False):
-    """Time-forward NearestNeighbor interpolate to discretizate the time"""
+    '''
+    Time-forward NearestNeighbor interpolate to discretizate the time.
+
+    Args:
+        seed (int): random seed
+        total_t (float): simulation time
+        dt (float): time unit
+        is_print (bool): whether print log to terminal
+
+    Returns: None
+    '''
 
     data = np.load(f'Data/1S2F/origin/{seed}/origin.npz')
     data_t = data['t']
@@ -50,10 +61,7 @@ def time_discretization(seed, total_t, dt=None, is_print=False):
 
         if is_print == 1: print(f'\rSeed[{seed}] interpolating {current_t:.6f}/{total_t}', end='')
 
-    import scienceplots
-    plt.style.use(['science'])
     plt.figure(figsize=(16,5))
-    plt.rcParams.update({'font.size':16})
     # plt.title(f'dt = {dt}')
     plt.subplot(1,3,1)
     plt.plot(t, X, label=r'$X$')
@@ -83,6 +91,17 @@ def time_discretization(seed, total_t, dt=None, is_print=False):
 
 
 def generate_original_data(trace_num, total_t, dt, parallel):
+    '''
+    Generate simulation data.
+
+    Args:
+        trace_num (int): num of simulation trajectories
+        total_t (float): simulation time
+        dt (float): time unit
+        parallel (bool): parallel or serial execution
+
+    Returns: None
+    '''
 
     os.makedirs('Data/1S2F/origin', exist_ok=True)
 
@@ -116,6 +135,18 @@ def generate_original_data(trace_num, total_t, dt, parallel):
     
     
 def generate_dataset(trace_num, tau, sample_num=None, is_print=False, sequence_length=None):
+    '''
+    Process simulation data.
+
+    Args:
+        trace_num (int): num of trajectories
+        tau (float): time step
+        sample_num (float): sample num of each trajectory
+        is_print (bool): whether print log to terminal
+        sequence_length (int): length of continuous time series
+
+    Returns: None
+    '''
 
     if (sequence_length is not None) and os.path.exists(f"Data/1S2F/data/tau_{tau}/train_{sequence_length}.npz") and os.path.exists(f"Data/1S2F/data/tau_{tau}/val_{sequence_length}.npz") and os.path.exists(f"Data/1S2F/data/tau_{tau}/test_{sequence_length}.npz"):
         return

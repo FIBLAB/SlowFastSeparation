@@ -17,6 +17,17 @@ from util import set_cpu_num
 
     
 def ID_subworker(args, tau, random_seed=729, is_print=False):
+    '''
+    A sub-pipeline of Time Scale Selection, with given param: tau and random_seed.
+
+    Args:
+        args (argparse): Namespace of ArgumentParser
+        tau (float): time step for time-lagged autoencoder
+        random_seed (int): random seed
+        is_print (bool): whether print log to terminal
+
+    Returns: None
+    '''
     
     time.sleep(0.1)
     seed_everything(random_seed)
@@ -31,6 +42,18 @@ def ID_subworker(args, tau, random_seed=729, is_print=False):
 
  
 def learn_subworker(args, n, random_seed=729, is_print=False, mode='train'):
+    '''
+    A sub-pipeline of Slow-Fast Dynamics Learning, with given param: random_seed.
+
+    Args:
+        args (argparse): Namespace of ArgumentParser
+        n (int): tau_s / tau_1
+        random_seed (int): random seed
+        is_print (bool): whether print log to terminal
+        mode (str): train or test
+
+    Returns: None
+    '''
     
     time.sleep(0.1)
     seed_everything(random_seed)
@@ -57,6 +80,17 @@ def learn_subworker(args, n, random_seed=729, is_print=False, mode='train'):
 
 
 def baseline_subworker(args, is_print=False, random_seed=729, mode='train'):
+    '''
+    A sub-pipeline of Baseline algorithms, with given param: random_seed.
+
+    Args:
+        args (argparse): Namespace of ArgumentParser
+        random_seed (int): random seed
+        is_print (bool): whether print log to terminal
+        mode (str): train or test
+
+    Returns: None
+    '''
 
     time.sleep(0.1)
     seed_everything(random_seed)
@@ -64,18 +98,18 @@ def baseline_subworker(args, is_print=False, random_seed=729, mode='train'):
 
     if args.system == '2S2F':
         if args.model == 'lstm':
-            model = models.LSTM(in_channels=1, input_1d_width=4)
+            model = models.LSTM(in_channels=1, feature_dim=4)
         elif args.model == 'tcn':
             model = models.TCN(input_size=4, output_size=4, num_channels=[32,16,8], kernel_size=3, dropout=0.1)
         elif args.model == 'neural_ode':
-            model = models.NeuralODE(in_channels=1, input_1d_width=4)
+            model = models.NeuralODE(in_channels=1, feature_dim=4)
     elif args.system == '1S2F':
         if args.model == 'lstm':
-            model = models.LSTM(in_channels=1, input_1d_width=3)
+            model = models.LSTM(in_channels=1, feature_dim=3)
         elif args.model == 'tcn':
             model = models.TCN(input_size=3, output_size=3, num_channels=[32,16,8], kernel_size=3, dropout=0.1)
         elif args.model == 'neural_ode':
-            model = models.NeuralODE(in_channels=1, input_1d_width=3)
+            model = models.NeuralODE(in_channels=1, feature_dim=3)
     
     if mode == 'train':
         # train
@@ -95,6 +129,14 @@ def baseline_subworker(args, is_print=False, random_seed=729, mode='train'):
     
 
 def Data_Generate(args):
+    '''
+    Data generation: simulation, processing, integration.
+
+    Args:
+        args (argparse): Namespace of ArgumentParser
+
+    Returns: None
+    '''
     
     # generate original data
     print('Generating original simulation data')
@@ -116,6 +158,14 @@ def Data_Generate(args):
     
     
 def ID_Estimate(args):
+    '''
+    General process: serial or parallel execution of 'Time Scale Selection' with different given parameters.
+
+    Args:
+        args (argparse): Namespace of ArgumentParser
+
+    Returns: None
+    '''
     
     print('Estimating the ID per tau')
     
@@ -144,6 +194,14 @@ def ID_Estimate(args):
 
 
 def Learn_Slow_Fast(args, mode='train'):
+    '''
+    General process: serial or parallel execution of 'Slow-Fast Dynamics Learning' with different given parameters.
+
+    Args:
+        args (argparse): Namespace of ArgumentParser
+
+    Returns: None
+    '''
     
     os.makedirs(args.result_dir, exist_ok=True)
     print(f'{mode.capitalize()} the learning of slow and fast dynamics')
@@ -167,6 +225,14 @@ def Learn_Slow_Fast(args, mode='train'):
 
 
 def Baseline(args, mode='train'):
+    '''
+    General process: serial or parallel execution of Baseline algorithms with different given parameters.
+
+    Args:
+        args (argparse): Namespace of ArgumentParser
+
+    Returns: None
+    '''
 
     os.makedirs(args.result_dir, exist_ok=True)
     print(f'Running the {args.model.upper()}')
@@ -197,8 +263,8 @@ if __name__ == '__main__':
     parser.add_argument('--dt', type=float, default=0.01, help='Time step of each simulation trajectories')
     parser.add_argument('--tau_1', type=float, default=0.1, help='params for ID-driven Time Scale Selection')
     parser.add_argument('--tau_N', type=float, default=3.0, help='params for ID-driven Time Scale Selection')
-    parser.add_argument('--tau_s', type=float, default=0.8, help='Approprate time scale for fast-slow separation')  
-    parser.add_argument('--slow_dim', type=int, default=2, help='Intrinsic dimension of slow dynamics')             
+    parser.add_argument('--tau_s', type=float, default=0.8, help='Approprate time scale for fast-slow separation')  # TODO: 需要加一个自动从time-lagged结果里选择tau_s的函数功能
+    parser.add_argument('--slow_dim', type=int, default=2, help='Intrinsic dimension of slow dynamics')             # TODO: 同上
     parser.add_argument('--koopman_dim', type=int, default=4, help='Dimension of Koopman invariable space')
     parser.add_argument('--id_epoch', type=int, default=100, help='Max training epoch of ID-driven Time Scale Selection')
     parser.add_argument('--learn_epoch', type=int, default=100, help='Max training epoch of Fast-Slow Learning')

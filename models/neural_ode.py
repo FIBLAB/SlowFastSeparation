@@ -28,17 +28,17 @@ class NeuralODEfunc(nn.Module):
 
 class NeuralODE(nn.Module):
 
-    def __init__(self, in_channels, input_1d_width, nhidden=64):
+    def __init__(self, in_channels, feature_dim, nhidden=64):
         super(NeuralODE, self).__init__()
 
-        self.ode = NeuralODEfunc(in_channels*input_1d_width, nhidden)
+        self.ode = NeuralODEfunc(in_channels*feature_dim, nhidden)
 
         self.flatten = nn.Flatten(start_dim=-2)
-        self.unflatten = nn.Unflatten(-1, (in_channels, input_1d_width))
+        self.unflatten = nn.Unflatten(-1, (in_channels, feature_dim))
 
         # scale inside the model
-        self.register_buffer('min', torch.zeros(in_channels, input_1d_width, dtype=torch.float32))
-        self.register_buffer('max', torch.ones(in_channels, input_1d_width, dtype=torch.float32))
+        self.register_buffer('min', torch.zeros(in_channels, feature_dim, dtype=torch.float32))
+        self.register_buffer('max', torch.ones(in_channels, feature_dim, dtype=torch.float32))
     
     def forward(self, x0, t):
         x0 = self.flatten(x0)[:,0]

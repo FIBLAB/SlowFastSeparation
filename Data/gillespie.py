@@ -10,6 +10,7 @@ from pytorch_lightning import seed_everything
 
 
 class Reaction:
+    '''Chemcial reaction'''
 
     def __init__(self, rate=0., num_lefts=None, num_rights=None):
 
@@ -27,6 +28,7 @@ class Reaction:
 
 
 class System:
+    '''Gillespie Algorithm'''
 
     def __init__(self, num_elements):
 
@@ -85,6 +87,17 @@ class System:
 
 
 def generate_origin(total_t=None, seed=729, IC=[100,40,2500]):
+    '''
+    Simulate the chemical reaction by Gillespie algorithm.
+
+    Args:
+        total_t (float): simulation time
+        seed (int): random seed
+        IC (list[int]): initial conditions [X0,Y0,Z0]
+
+    Returns:
+        float: The difference of a and b.
+    '''
 
     time.sleep(1.0)
 
@@ -136,5 +149,3 @@ def generate_origin(total_t=None, seed=729, IC=[100,40,2500]):
     avg = np.round(np.average(np.diff(t)), digit)
 
     np.savez(f'Data/1S2F/origin/{seed}/origin.npz', t=t, X=X, Y=Y, Z=Z, dt=avg)
-
-    # print(f'\nSeed[{seed}] subprocess finished!\n')

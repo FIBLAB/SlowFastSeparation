@@ -8,21 +8,6 @@ class Koopman_OPT(nn.Module):
         super(Koopman_OPT, self).__init__()
 
         self.koopman_dim = koopman_dim
-        
-        # # (tau,)-->(koopman_dim, koopman_dim)
-        # self.V = nn.Sequential(
-        #     nn.Linear(1, 64),
-        #     nn.Tanh(),
-        #     nn.Linear(64, self.koopman_dim**2),
-        #     nn.Unflatten(-1, (self.koopman_dim, self.koopman_dim))
-        # )
-        
-        # # (tau,)-->(koopman_dim,)
-        # self.Lambda = nn.Sequential(
-        #     nn.Linear(1, 64),
-        #     nn.Tanh(),
-        #     nn.Linear(64, self.koopman_dim)
-        # )
 
         self.register_parameter('V', nn.Parameter(torch.Tensor(koopman_dim, koopman_dim)))
         self.register_parameter('Lambda', nn.Parameter(torch.Tensor(koopman_dim)))
@@ -33,48 +18,45 @@ class Koopman_OPT(nn.Module):
 
     def forward(self, tau):
 
-        # K: (koopman_dim, koopman_dim), K = V * exp(tau*Lambda) * V^-1
-        # V, Lambda = self.V(tau), self.Lambda(tau)
-        # K = torch.mm(torch.mm(V, torch.diag(Lambda)), torch.inverse(V))
         tmp1 = torch.diag(torch.exp(tau*self.Lambda))
         V_inverse = torch.inverse(self.V)
         K = torch.mm(torch.mm(V_inverse, tmp1), self.V)
 
-        # return K
-        return tmp1
+        return K
+        # return tmp1
     
 
 class LSTM_OPT(nn.Module):
     
-    def __init__(self, in_channels, input_1d_width, hidden_dim, layer_num, tau_s, device):
+    def __init__(self, in_channels, feature_dim, hidden_dim, layer_num, tau_s, device):
         super(LSTM_OPT, self).__init__()
         
         self.device = device
         self.tau_s = tau_s
         
-        # (batchsize,1,1,4)-->(batchsize,1,4)
+        # (batchsize,1,channel_num,feature_dim)-->(batchsize,1,channel_num*feature_dim)
         self.flatten = nn.Flatten(start_dim=2)
         
-        # (batchsize,1,4)-->(batchsize, hidden_dim)
+        # (batchsize,1,channel_num*feature_dim)-->(batchsize, hidden_dim)
         self.layer_num = layer_num
         self.hidden_dim = hidden_dim
         self.cell = nn.LSTM(
-            input_size=in_channels*input_1d_width, 
+            input_size=in_channels*feature_dim, 
             hidden_size=hidden_dim, 
             num_layers=layer_num, 
             dropout=0.01, 
             batch_first=True # input: (batch_size, squences, features)
             )
         
-        # (batchsize, hidden_dim)-->(batchsize, 4)
-        self.fc = nn.Linear(hidden_dim, in_channels*input_1d_width)
+        # (batchsize, hidden_dim)-->(batchsize, channel_num*feature_dim)
+        self.fc = nn.Linear(hidden_dim, in_channels*feature_dim)
 
         # mechanism new
         self.a_head = nn.Linear(hidden_dim, 1)
-        self.b_head = nn.Linear(hidden_dim, in_channels*input_1d_width)
+        self.b_head = nn.Linear(hidden_dim, in_channels*feature_dim)
         
-        # (batchsize, 4)-->(batchsize,1,1,4)
-        self.unflatten = nn.Unflatten(-1, (in_channels, input_1d_width))
+        # (batchsize, channel_num*feature_dim)-->(batchsize,1,channel_num,feature_dim)
+        self.unflatten = nn.Unflatten(-1, (in_channels, feature_dim))
     
     def forward(self, x):
         
@@ -87,8 +69,8 @@ class LSTM_OPT(nn.Module):
         # y = self.fc(h[-1])
 
         a = self.a_head(h[-1]).unsqueeze(-2) # (batch_size, 1, 1)
-        b = self.b_head(h[-1]).unsqueeze(-2) # (batch_size, 1, in_channels*input_1d_width)
-        y = torch.abs(x) * torch.exp(-(a+self.tau_s)) * b # (batch_size, 1, in_channels*input_1d_width)
+        b = self.b_head(h[-1]).unsqueeze(-2) # (batch_size, 1, in_channels*feature_dim)
+        y = torch.abs(x) * torch.exp(-(a+self.tau_s)) * b # (batch_size, 1, in_channels*feature_dim)
 
         y = self.unflatten(y)
                 
@@ -97,15 +79,15 @@ class LSTM_OPT(nn.Module):
 
 class DynamicsEvolver(nn.Module):
     
-    def __init__(self, in_channels, input_1d_width, embed_dim, slow_dim, redundant_dim, tau_s, device):
+    def __init__(self, in_channels, feature_dim, embed_dim, slow_dim, redundant_dim, tau_s, device):
         super(DynamicsEvolver, self).__init__()
 
         self.slow_dim = slow_dim
         
-        # (batchsize,1,1,4)-->(batchsize, embed_dim)
+        # (batchsize,1,channel_num,feature_dim)-->(batchsize, embed_dim)
         self.encoder_1 = nn.Sequential(
             nn.Flatten(),
-            nn.Linear(in_channels*input_1d_width, 64, bias=True),
+            nn.Linear(in_channels*feature_dim, 64, bias=True),
             nn.Tanh(),
             nn.Dropout(p=0.01),
             nn.Linear(64, embed_dim, bias=True),
@@ -130,7 +112,7 @@ class DynamicsEvolver(nn.Module):
             nn.Tanh(),
         )
         
-        # (batchsize, slow_dim)-->(batchsize,1,1,4)
+        # (batchsize, slow_dim)-->(batchsize,1,channel_num,feature_dim)
         self.decoder = nn.Sequential(
             nn.Linear(slow_dim, 64, bias=True),
             nn.Tanh(),
@@ -140,27 +122,26 @@ class DynamicsEvolver(nn.Module):
             nn.Linear(embed_dim, 64, bias=True),
             nn.Tanh(),
             nn.Dropout(p=0.01),
-            nn.Linear(64, in_channels*input_1d_width, bias=True),
+            nn.Linear(64, in_channels*feature_dim, bias=True),
             nn.Tanh(),
-            nn.Unflatten(-1, (1, in_channels, input_1d_width))
+            nn.Unflatten(-1, (1, in_channels, feature_dim))
         )
         
         self.K_opt = Koopman_OPT(slow_dim+redundant_dim)
-        # self.K_opt = Koopman_OPT(slow_dim)
-        self.lstm = LSTM_OPT(in_channels, input_1d_width, hidden_dim=64, layer_num=2, tau_s=tau_s, device=device)
+        self.lstm = LSTM_OPT(in_channels, feature_dim, hidden_dim=64, layer_num=2, tau_s=tau_s, device=device)
 
         # scale inside the model
-        self.register_buffer('min', torch.zeros(in_channels, input_1d_width, dtype=torch.float32))
-        self.register_buffer('max', torch.ones(in_channels, input_1d_width, dtype=torch.float32))
+        self.register_buffer('min', torch.zeros(in_channels, feature_dim, dtype=torch.float32))
+        self.register_buffer('max', torch.ones(in_channels, feature_dim, dtype=torch.float32))
     
     def obs2slow(self, obs):
-        # (batchsize,1,1,4)-->(batchsize, embed_dim)-->(batchsize, slow_dim)
+        # (batchsize,1,channel_num,feature_dim)-->(batchsize, embed_dim)-->(batchsize, slow_dim)
         embed = self.encoder_1(obs)
         slow_var = self.encoder_2(embed)
         return slow_var, embed
 
     def slow2obs(self, slow_var):
-        # (batchsize, slow_dim)-->(batchsize,1,1,4)
+        # (batchsize, slow_dim)-->(batchsize,1,channel_num,feature_dim)
         obs = self.decoder(slow_var)
         return obs
 

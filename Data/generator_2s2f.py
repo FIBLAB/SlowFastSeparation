@@ -1,14 +1,15 @@
 import os
 import numpy as np
 from tqdm import tqdm
-from matplotlib import cm
-import matplotlib.pyplot as plt
+import scienceplots
+import matplotlib.pyplot as plt;plt.style.use(['science']);plt.rcParams.update({'font.size':16})
 from scipy.integrate import odeint
 from pytorch_lightning import seed_everything
 import warnings;warnings.simplefilter('ignore')
 
 
 def system_4d(y0, t, para=(0.025,3)):
+    '''2S2F ODE'''
     epsilon, omega =  para
     c1, c2, c3, c4 = y0
     
@@ -21,6 +22,17 @@ def system_4d(y0, t, para=(0.025,3)):
 
 
 def generate_original_data(trace_num, total_t=5, dt=0.0001, save=True, plot=False, parallel=False):
+    '''
+    Generate simulation data.
+
+    Args:
+        trace_num (int): num of simulation trajectories
+        total_t (float): simulation time
+        dt (float): time unit
+        parallel (bool): parallel or serial execution
+
+    Returns: None
+    '''
     
     def solve_1_trace(trace_id=0, total_t=5, dt=0.001):
         
@@ -60,6 +72,18 @@ def generate_original_data(trace_num, total_t=5, dt=0.0001, save=True, plot=Fals
 
     
 def generate_dataset(trace_num, tau, sample_num=None, is_print=False, sequence_length=None):
+    '''
+    Process simulation data.
+
+    Args:
+        trace_num (int): num of trajectories
+        tau (float): time step
+        sample_num (float): sample num of each trajectory
+        is_print (bool): whether print log to terminal
+        sequence_length (int): length of continuous time series
+
+    Returns: None
+    '''
 
     if (sequence_length is not None) and os.path.exists(f"Data/2S2F/data/tau_{tau}/train_{sequence_length}.npz") and os.path.exists(f"Data/2S2F/data/tau_{tau}/val_{sequence_length}.npz") and os.path.exists(f"Data/2S2F/data/tau_{tau}/test_{sequence_length}.npz"):
         return
@@ -188,9 +212,6 @@ def plot_c3_c4_trajectory():
     c3_trace = sol[:, 2]
     c4_trace = sol[:, 3]
     
-    import scienceplots
-    plt.style.use(['science'])
-    plt.rcParams.update({'font.size':16})
     for i, (c, trace) in enumerate(zip([c3,c4], [c3_trace,c4_trace])):
         fig = plt.figure(figsize=(6,6))
         ax = plt.subplot(111,projection='3d')

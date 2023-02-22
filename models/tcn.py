@@ -72,13 +72,13 @@ class TCN(nn.Module):
         self.register_buffer('max', torch.ones(1, input_size, dtype=torch.float32))
 
     def forward(self, x):
-        # (batchsize,sequence_length,1,3)-->(batchsize,sequence_length,3)
+        # (batchsize,sequence_length,channel_num,feature_dim)-->(batchsize,sequence_length,channel_num*feature_dim)
         x = nn.Flatten(start_dim=-2)(x)
         
-        # (batchsize,sequence_length,3)-->(batchsize,3,sequence_length)
+        # (batchsize,sequence_length,channel_num*feature_dim)-->(batchsize,3,sequence_length)
         x = x.transpose(2,1).contiguous()
         
-        # (batchsize,sequence_length,3)-->(batchsize,sequence_length,1,3)
+        # (batchsize,sequence_length,channel_num*feature_dim)-->(batchsize,sequence_length,channel_num,feature_dim)
         y = self.tcn(x).transpose(2,1).contiguous()
         y = self.tanh(self.linear(y))
         y = y.unsqueeze(-2)

@@ -1,7 +1,8 @@
 import os
 import numpy as np
 import pandas as pd
-import matplotlib.pyplot as plt
+import scienceplots
+import matplotlib.pyplot as plt;plt.style.use(['science'])
 
 
 def plot_epoch_test_log(tau, max_epoch):
@@ -97,8 +98,6 @@ def plot_id_per_tau(tau_list, id_epoch):
         round_id_per_tau.append([round(id[0])])
     round_id_per_tau = np.array(round_id_per_tau)
 
-    import scienceplots
-    plt.style.use(['science'])
     plt.figure(figsize=(6,6))
     plt.rcParams.update({'font.size':16})
     for i, item in enumerate(['MLE']):
@@ -111,18 +110,6 @@ def plot_id_per_tau(tau_list, id_epoch):
     plt.ylabel('Intrinsic dimensionality', fontsize=18)
     plt.subplots_adjust(bottom=0.15)
     plt.savefig('logs/1S2F/time-lagged/id_per_tau.pdf', dpi=300)
-
-        
-def plot_slow_ae_loss(tau=0.0, pretrain_epoch=30, delta_t=0.01, id_list = [1,2,3,4]):
-    
-    plt.figure()
-    for id in id_list:
-        loss = np.load(f'logs/slow_extract_and_evolve/tau_{tau}/pretrain_epoch{pretrain_epoch}/delta_t{delta_t}/id{id}/val_loss_curve.npy')
-        plt.plot(loss, label=f'ID[{id}]')
-    plt.xlabel('epoch')
-    plt.legend()
-    plt.title(f'Val mse | tau[{tau}] | pretrain_epoch[{pretrain_epoch}] | delta_t[{delta_t}]')
-    plt.savefig(f'logs/slow_extract_and_evolve/tau_{tau}/pretrain_epoch{pretrain_epoch}/delta_t{delta_t}/val_loss_curves.pdf', dpi=300)
 
 
 def plot_1s2f_autocorr():

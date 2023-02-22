@@ -4,7 +4,7 @@ from torch import nn
 
 class LSTM(nn.Module):
     
-    def __init__(self, in_channels, input_1d_width, hidden_dim=64, layer_num=2):
+    def __init__(self, in_channels, feature_dim, hidden_dim=64, layer_num=2):
         super(LSTM, self).__init__()
         
         # (batchsize,1,channel_num,feature_dim)-->(batchsize,1,channel_num*feature_dim)
@@ -14,7 +14,7 @@ class LSTM(nn.Module):
         self.layer_num = layer_num
         self.hidden_dim = hidden_dim
         self.cell = nn.LSTM(
-            input_size=in_channels*input_1d_width, 
+            input_size=in_channels*feature_dim, 
             hidden_size=hidden_dim, 
             num_layers=layer_num, 
             dropout=0.01, 
@@ -22,14 +22,14 @@ class LSTM(nn.Module):
             )
         
         # (batchsize, hidden_dim)-->(batchsize, channel_num*feature_dim)
-        self.fc = nn.Linear(hidden_dim, in_channels*input_1d_width)
+        self.fc = nn.Linear(hidden_dim, in_channels*feature_dim)
         
         # (batchsize, channel_num*feature_dim)-->(batchsize,1,channel_num,feature_dim)
-        self.unflatten = nn.Unflatten(-1, (1, in_channels, input_1d_width))
+        self.unflatten = nn.Unflatten(-1, (1, in_channels, feature_dim))
 
         # scale inside the model
-        self.register_buffer('min', torch.zeros(in_channels, input_1d_width, dtype=torch.float32))
-        self.register_buffer('max', torch.ones(in_channels, input_1d_width, dtype=torch.float32))
+        self.register_buffer('min', torch.zeros(in_channels, feature_dim, dtype=torch.float32))
+        self.register_buffer('max', torch.ones(in_channels, feature_dim, dtype=torch.float32))
     
     def forward(self, x, device=torch.device('cuda:1')):
         

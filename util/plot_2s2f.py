@@ -117,18 +117,6 @@ def plot_id_per_tau(tau_list, id_epoch):
     plt.subplots_adjust(bottom=0.15)
     plt.savefig('logs/2S2F/time-lagged/id_per_tau.pdf', dpi=300)
 
-        
-def plot_slow_ae_loss(tau=0.0, pretrain_epoch=30, delta_t=0.01, id_list = [1,2,3,4]):
-    
-    plt.figure()
-    for id in id_list:
-        loss = np.load(f'logs/slow_extract_and_evolve/tau_{tau}/pretrain_epoch{pretrain_epoch}/id{id}/val_loss_curve.npy')
-        plt.plot(loss, label=f'ID[{id}]')
-    plt.xlabel('epoch')
-    plt.legend()
-    plt.title(f'Val mse | tau[{tau}] | pretrain_epoch[{pretrain_epoch}] | delta_t[{delta_t}]')
-    plt.savefig(f'logs/slow_extract_and_evolve/tau_{tau}/pretrain_epoch{pretrain_epoch}/val_loss_curves.pdf', dpi=300)
-
 
 def plot_1s2f_autocorr():
 
