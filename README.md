@@ -2,7 +2,7 @@
 
 A python  implementation of the submitted paper in KDD'23: "Learning Slow and Fast System Dynamics via Automatic Separation of Time Scales".
 
-# Requirements
+## Requirements
 - Python 3.10
 - PyTorch==1.12
 - scikit-learn==1.1.2
@@ -13,9 +13,9 @@ A python  implementation of the submitted paper in KDD'23: "Learning Slow and Fa
 - scikit-dimension
 - torchdiffeq
 
-# Usage
+## Usage
 
-## Our Model
+### Our Model
 
 **Phase1:** Selecting the appropriate time scale $\tau_s$ and slow dimension *slow_dim* by ID-driven method.
 
@@ -32,7 +32,7 @@ A python  implementation of the submitted paper in KDD'23: "Learning Slow and Fa
 ./OURS.sh
 ```
 
-## Baseline
+### Baseline
 
 Train and test models in 1S2F and 2S2F system:
 
