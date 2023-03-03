@@ -191,7 +191,9 @@ def plot_evolve(length):
     
     item = ['our','lstm','tcn', 'ode']
     for i, data in enumerate([our_data, lstm_data, tcn_data, ode_data]):
-        print(f'{item[i]} | tau[{data[0,0]:.1f}] RMSE={data[0,2]:.4f}, MAE={data[0,3]:.4f}, MAPE={100*data[0,4]:.2f}% | tau[{data[9,0]:.1f}] RMSE={data[9,2]:.4f}, MAE={data[9,3]:.4f}, MAPE={100*data[9,4]:.2f}% | tau[{data[49,0]:.1f}] RMSE={data[49,2]:.4f}, MAE={data[49,3]:.4f}, MAPE={100*data[49,4]:.2f}%')
+        print(f'{item[i]} | tau[{data[0,0]:.1f}] RMSE={data[0,2]:.4f}, MAE={data[0,3]:.4f}, MAPE={100*data[0,4]:.2f}% | \
+              tau[{data[9,0]:.1f}] RMSE={data[9,2]:.4f}, MAE={data[9,3]:.4f}, MAPE={100*data[9,4]:.2f}% | \
+              tau[{data[49,0]:.1f}] RMSE={data[49,2]:.4f}, MAE={data[49,3]:.4f}, MAPE={100*data[49,4]:.2f}%')
 
 
 if __name__ == '__main__':

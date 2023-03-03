@@ -52,8 +52,8 @@ class LSTM_OPT(nn.Module):
         self.fc = nn.Linear(hidden_dim, in_channels*feature_dim)
 
         # mechanism new
-        self.a_head = nn.Linear(hidden_dim, 1)
-        self.b_head = nn.Linear(hidden_dim, in_channels*feature_dim)
+        self.eta_head = nn.Linear(hidden_dim, 1)
+        self.xi_head = nn.Linear(hidden_dim, in_channels*feature_dim)
         
         # (batchsize, channel_num*feature_dim)-->(batchsize,1,channel_num,feature_dim)
         self.unflatten = nn.Unflatten(-1, (in_channels, feature_dim))
@@ -66,11 +66,9 @@ class LSTM_OPT(nn.Module):
         x = self.flatten(x)
         _, (h, c)  = self.cell(x, (h0, c0))
 
-        # y = self.fc(h[-1])
-
-        a = self.a_head(h[-1]).unsqueeze(-2) # (batch_size, 1, 1)
-        b = self.b_head(h[-1]).unsqueeze(-2) # (batch_size, 1, in_channels*feature_dim)
-        y = torch.abs(x) * torch.exp(-(a+self.tau_s)) * b # (batch_size, 1, in_channels*feature_dim)
+        eta = self.eta_head(h[-1]).unsqueeze(-2) # (batch_size, 1, 1)
+        xi = self.xi_head(h[-1]).unsqueeze(-2) # (batch_size, 1, in_channels*feature_dim)
+        y = torch.abs(x) * torch.exp(-(eta+self.tau_s)) * xi # (batch_size, 1, in_channels*feature_dim)
 
         y = self.unflatten(y)
                 

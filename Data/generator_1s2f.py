@@ -148,9 +148,13 @@ def generate_dataset(trace_num, tau, sample_num=None, is_print=False, sequence_l
     Returns: None
     '''
 
-    if (sequence_length is not None) and os.path.exists(f"Data/1S2F/data/tau_{tau}/train_{sequence_length}.npz") and os.path.exists(f"Data/1S2F/data/tau_{tau}/val_{sequence_length}.npz") and os.path.exists(f"Data/1S2F/data/tau_{tau}/test_{sequence_length}.npz"):
+    if (sequence_length is not None) and os.path.exists(f"Data/1S2F/data/tau_{tau}/train_{sequence_length}.npz") and \
+        os.path.exists(f"Data/1S2F/data/tau_{tau}/val_{sequence_length}.npz") and \
+            os.path.exists(f"Data/1S2F/data/tau_{tau}/test_{sequence_length}.npz"):
         return
-    elif (sequence_length is None) and os.path.exists(f"Data/1S2F/data/tau_{tau}/train.npz") and os.path.exists(f"Data/1S2F/data/tau_{tau}/val.npz") and os.path.exists(f"Data/1S2F/data/tau_{tau}/test.npz"):
+    elif (sequence_length is None) and os.path.exists(f"Data/1S2F/data/tau_{tau}/train.npz") and \
+        os.path.exists(f"Data/1S2F/data/tau_{tau}/val.npz") and \
+            os.path.exists(f"Data/1S2F/data/tau_{tau}/test.npz"):
         return
 
     # load original data

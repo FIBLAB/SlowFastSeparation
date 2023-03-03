@@ -149,7 +149,8 @@ def plot_2s2f_autocorr():
     simdata = np.load('Data/2S2F/origin/origin.npz')
     
     trace_num = 3
-    corrC1, corrC2, corrC3, corrC4 = [[] for _ in range(trace_num)], [[] for _ in range(trace_num)], [[] for _ in range(trace_num)], [[] for _ in range(trace_num)]
+    corrC1, corrC2, corrC3, corrC4 = [[] for _ in range(trace_num)], [[] for _ in range(trace_num)], \
+        [[] for _ in range(trace_num)], [[] for _ in range(trace_num)]
     for trace_id in range(trace_num):
         tmp = np.array(simdata['trace'])[trace_id]
         c1 = tmp[:,0][:,np.newaxis]
@@ -297,10 +298,11 @@ def plot_evolve(length):
     
     item = ['our','lstm','tcn', 'ode', 'our old']
     for i, data in enumerate([our_data, lstm_data, tcn_data, ode_data]):
-        print(f'{item[i]} | tau[{data[0,0]:.1f}] RMSE={data[0,2]:.4f}, MAE={data[0,3]:.4f}, MAPE={100*data[0,4]:.2f}% | tau[{data[9,0]:.1f}] RMSE={data[9,2]:.4f}, MAE={data[9,3]:.4f}, MAPE={100*data[9,4]:.2f}% | tau[{data[49,0]:.1f}] RMSE={data[49,2]:.4f}, MAE={data[49,3]:.4f}, MAPE={100*data[49,4]:.2f}%')
+        print(f'{item[i]} | tau[{data[0,0]:.1f}] RMSE={data[0,2]:.4f}, MAE={data[0,3]:.4f}, MAPE={100*data[0,4]:.2f}% | \
+              tau[{data[9,0]:.1f}] RMSE={data[9,2]:.4f}, MAE={data[9,3]:.4f}, MAPE={100*data[9,4]:.2f}% | \
+              tau[{data[49,0]:.1f}] RMSE={data[49,2]:.4f}, MAE={data[49,3]:.4f}, MAPE={100*data[49,4]:.2f}%')
     
 
 if __name__ == '__main__':
     
-    # plot_2s2f_autocorr()
     plot_evolve(0.8)

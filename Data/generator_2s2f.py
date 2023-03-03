@@ -10,13 +10,17 @@ import warnings;warnings.simplefilter('ignore')
 
 def system_4d(y0, t, para=(0.025,3)):
     '''2S2F ODE'''
+    
     epsilon, omega =  para
     c1, c2, c3, c4 = y0
     
     dc1 = -c1
     dc2 = -2 * c2
-    dc3 = -(c3-np.sin(omega*c1)*np.sin(omega*c2))/epsilon - c1*omega*np.cos(omega*c1)*np.sin(omega*c2) - c2*omega*np.cos(omega*c2)*np.sin(omega*c1)
-    dc4 = -(c4-1/((1+np.exp(-omega*c1))*(1+np.exp(-omega*c2))))/epsilon - c1*omega*np.exp(-omega*c1)/((1+np.exp(-omega*c2))*((1+np.exp(-omega*c1))**2)) - c2*omega*np.exp(-omega*c2)/((1+np.exp(-omega*c1))*((1+np.exp(-omega*c2))**2))
+    dc3 = -(c3-np.sin(omega*c1)*np.sin(omega*c2))/epsilon - c1*omega*np.cos(omega*c1)*np.sin(omega*c2) \
+        - c2*omega*np.cos(omega*c2)*np.sin(omega*c1)
+    dc4 = -(c4-1/((1+np.exp(-omega*c1))*(1+np.exp(-omega*c2))))/epsilon \
+        - c1*omega*np.exp(-omega*c1)/((1+np.exp(-omega*c2))*((1+np.exp(-omega*c1))**2)) \
+            - c2*omega*np.exp(-omega*c2)/((1+np.exp(-omega*c1))*((1+np.exp(-omega*c2))**2))
     
     return [dc1, dc2, dc3, dc4]
 
@@ -85,9 +89,15 @@ def generate_dataset(trace_num, tau, sample_num=None, is_print=False, sequence_l
     Returns: None
     '''
 
-    if (sequence_length is not None) and os.path.exists(f"Data/2S2F/data/tau_{tau}/train_{sequence_length}.npz") and os.path.exists(f"Data/2S2F/data/tau_{tau}/val_{sequence_length}.npz") and os.path.exists(f"Data/2S2F/data/tau_{tau}/test_{sequence_length}.npz"):
+    if (sequence_length is not None) and \
+        os.path.exists(f"Data/2S2F/data/tau_{tau}/train_{sequence_length}.npz") and \
+            os.path.exists(f"Data/2S2F/data/tau_{tau}/val_{sequence_length}.npz") and \
+                os.path.exists(f"Data/2S2F/data/tau_{tau}/test_{sequence_length}.npz"):
         return
-    elif (sequence_length is None) and os.path.exists(f"Data/2S2F/data/tau_{tau}/train.npz") and os.path.exists(f"Data/2S2F/data/tau_{tau}/val.npz") and os.path.exists(f"Data/2S2F/data/tau_{tau}/test.npz"):
+    elif (sequence_length is None) and \
+        os.path.exists(f"Data/2S2F/data/tau_{tau}/train.npz") and \
+            os.path.exists(f"Data/2S2F/data/tau_{tau}/val.npz") and \
+                os.path.exists(f"Data/2S2F/data/tau_{tau}/test.npz"):
         return
     
     # load original data

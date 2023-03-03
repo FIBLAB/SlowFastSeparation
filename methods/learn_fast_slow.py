@@ -36,9 +36,11 @@ def train_slow_extract_and_evolve(
     # init model
     assert koopman_dim>=slow_dim, f"Value Error, koopman_dim is smaller than slow_dim({koopman_dim}<{slow_dim})"
     if system == '2S2F':
-        model = models.DynamicsEvolver(in_channels=1, feature_dim=4, embed_dim=64, slow_dim=slow_dim, redundant_dim=koopman_dim-slow_dim, tau_s=tau_s, device=device)
+        model = models.DynamicsEvolver(in_channels=1, feature_dim=4, embed_dim=64, slow_dim=slow_dim, 
+                                       redundant_dim=koopman_dim-slow_dim, tau_s=tau_s, device=device)
     elif system == '1S2F':
-        model = models.DynamicsEvolver(in_channels=1, feature_dim=3, embed_dim=64, slow_dim=slow_dim, redundant_dim=koopman_dim-slow_dim, tau_s=tau_s, device=device)
+        model = models.DynamicsEvolver(in_channels=1, feature_dim=3, embed_dim=64, slow_dim=slow_dim, 
+                                       redundant_dim=koopman_dim-slow_dim, tau_s=tau_s, device=device)
     model.apply(models.weights_normal_init)
     model.min = torch.from_numpy(np.loadtxt(data_filepath+"/data_min.txt").astype(np.float32)).unsqueeze(0)
     model.max = torch.from_numpy(np.loadtxt(data_filepath+"/data_max.txt").astype(np.float32)).unsqueeze(0)
@@ -221,7 +223,8 @@ def train_slow_extract_and_evolve(
             slow_reconstruct_loss = MSE_loss(slow_obses, inputs)
             evolve_loss = MSE_loss(total_obses_next, targets)
             all_loss = 0.5*slow_reconstruct_loss + 0.5*evolve_loss + 0.1*adiabatic_loss
-            if is_print: print(f'\rTau[{tau_s}] | epoch[{epoch}/{learn_max_epoch}] | val: adiab_loss={adiabatic_loss:.5f}, recons_loss={slow_reconstruct_loss:.5f}, evol_loss={evolve_loss:.5f}', end='')
+            if is_print: print(f'\rTau[{tau_s}] | epoch[{epoch}/{learn_max_epoch}] | val: adiab_loss={adiabatic_loss:.5f}, \
+                               recons_loss={slow_reconstruct_loss:.5f}, evol_loss={evolve_loss:.5f}', end='')
             
             val_loss.append(all_loss.detach().item())
             
@@ -340,9 +343,11 @@ def test_evolve(
     # load model
     batch_size = 128
     if system == '2S2F':
-        model = models.DynamicsEvolver(in_channels=1, feature_dim=4, embed_dim=64, slow_dim=slow_dim, redundant_dim=koopman_dim-slow_dim, tau_s=tau_s, device=device)
+        model = models.DynamicsEvolver(in_channels=1, feature_dim=4, embed_dim=64, slow_dim=slow_dim, 
+                                       redundant_dim=koopman_dim-slow_dim, tau_s=tau_s, device=device)
     elif system == '1S2F':
-        model = models.DynamicsEvolver(in_channels=1, feature_dim=3, embed_dim=64, slow_dim=slow_dim, redundant_dim=koopman_dim-slow_dim, tau_s=tau_s, device=device)
+        model = models.DynamicsEvolver(in_channels=1, feature_dim=3, embed_dim=64, slow_dim=slow_dim, 
+                                       redundant_dim=koopman_dim-slow_dim, tau_s=tau_s, device=device)
     ckpt_path = log_dir+f'/checkpoints/epoch-{ckpt_epoch}.ckpt'
     ckpt = torch.load(ckpt_path)
     model.load_state_dict(ckpt)
