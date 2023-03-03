@@ -44,4 +44,4 @@ Train and test models in 1S2F and 2S2F system:
 
 
 
-We recommend turning on the **--parallel** option to enable parallel execution of programs with different random seeds to improve test efficiency. Please be careful to choose the right number of random seeds according to your computational and cache resources **--seed_num**. The result of the experiment should be an average of multiple random seeds.
+We recommend turning on the **--parallel** option to enable parallel execution of programs with different random seeds to improve test efficiency. Please be careful to choose the suitable number of random seeds  **--seed_num** according to your computational and cache resources. The result of the experiment should be an average of multiple random seeds.
