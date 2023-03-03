@@ -1,42 +1,47 @@
 # SlowFastSeparation
 
-Codes for submitted paper in KDD'23: "Learning Slow and Fast System Dynamics via Automatic Separation of Time Scales"
-
-
-
-**The refactored version coming soon!**
-
-
+A python  implementation of the submitted paper in KDD'23: "Learning Slow and Fast System Dynamics via Automatic Separation of Time Scales".
 
 # Requirements
 - Python 3.10
-
 - PyTorch==1.12
-
 - scikit-learn==1.1.2
-
 - Numpy
-
 - Scipy
-
 - Matplotlib
-
-- pytorch_lightning
-
 - tqdm
-
+- scikit-dimension
+- torchdiffeq
 
 # Usage
+
+## Our Model
+
+**Phase1:** Selecting the appropriate time scale $\tau_s$ and slow dimension *slow_dim* by ID-driven method.
+
+```shell
+# switch --phase to 'TimeSelection'
+./OURS.sh
+```
+
+**Phase2:** Separating the fast and slow components and learning the dynamics.
+
+```shell
+# switch --phase to 'LearnDynamics'
+# choose appropriate params(--tau_s, --slow_dim and --koopman_dim) by the Phase1
+./OURS.sh
+```
+
+## Baseline
 
 Train and test models in 1S2F and 2S2F system:
 
 ```shell
-
-./OURS.sh # for our model
-
 ./LSTM.sh # for LSTM
-
 ./TCN.sh # for TCN
-
 ./NeuralODE # for Neural ODE
 ```
+
+
+
+We recommend turning on the **--parallel** option to enable parallel execution of programs with different random seeds to improve test efficiency. Please be careful to choose the right number of random seeds according to your computational and cache resources **--seed_num**. The result of the experiment should be an average of multiple random seeds.

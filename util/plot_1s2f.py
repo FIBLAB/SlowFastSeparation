@@ -1,4 +1,3 @@
-import os
 import numpy as np
 import pandas as pd
 import scienceplots
@@ -15,7 +14,7 @@ def plot_epoch_test_log(tau, max_epoch):
             self.mse_z = [[] for _ in range(max_epoch)]
             self.LB_id = [[] for _ in range(max_epoch)]
 
-    fp = open(f'logs/1S2F/time-lagged/tau_{tau}/test_log.txt', 'r')
+    fp = open(f'logs/1S2F/TimeSelection/tau_{tau}/test_log.txt', 'r')
     items = []
     for line in fp.readlines():
         tau = float(line[:-1].split(',')[0])
@@ -72,7 +71,7 @@ def plot_epoch_test_log(tau, max_epoch):
     plt.plot(range(max_epoch), mse_z_list, label='z')
     # plt.ylim((0., 1.05*max(np.max(mse_x_list), np.max(mse_y_list), np.max(mse_z_list))))
     plt.legend()
-    plt.savefig(f'logs/1S2F/time-lagged/tau_{tau}/ID_per_epoch.pdf', dpi=300)
+    plt.savefig(f'logs/1S2F/TimeSelection/tau_{tau}/ID_per_epoch.pdf', dpi=300)
     plt.close()
 
 
@@ -80,7 +79,7 @@ def plot_id_per_tau(tau_list, id_epoch):
 
     id_per_tau = [[] for _ in tau_list]
     for i, tau in enumerate(tau_list):
-        fp = open(f'logs/1S2F/time-lagged/tau_{round(tau,2)}/test_log.txt', 'r')
+        fp = open(f'logs/1S2F/TimeSelection/tau_{round(tau,2)}/test_log.txt', 'r')
         for line in fp.readlines():
             seed = int(line[:-1].split(',')[1])
             epoch = int(line[:-1].split(',')[5])
@@ -109,7 +108,7 @@ def plot_id_per_tau(tau_list, id_epoch):
     plt.xlabel(r'$\tau / s$', fontsize=18)
     plt.ylabel('Intrinsic dimensionality', fontsize=18)
     plt.subplots_adjust(bottom=0.15)
-    plt.savefig('logs/1S2F/time-lagged/id_per_tau.pdf', dpi=300)
+    plt.savefig('logs/1S2F/TimeSelection/id_per_tau.pdf', dpi=300)
 
 
 def plot_1s2f_autocorr():
@@ -146,10 +145,10 @@ def plot_1s2f_autocorr():
 
 def plot_evolve(length):
     
-    our = open(f'results/1S2F/evolve_test_{length}.txt', 'r')
-    lstm = open(f'results/1S2F/lstm_evolve_test_{length}.txt', 'r')
-    tcn = open(f'results/1S2F/tcn_evolve_test_{length/5}.txt', 'r')
-    ode = open(f'results/1S2F/neuralODE_evolve_test_{length}.txt', 'r')
+    our = open(f'Results/1S2F/ours_evolve_test_{length}.txt', 'r')
+    lstm = open(f'Results/1S2F/lstm_evolve_test_{length}.txt', 'r')
+    tcn = open(f'Results/1S2F/tcn_evolve_test_{length}.txt', 'r')
+    ode = open(f'Results/1S2F/neural_ode_evolve_test_{length}.txt', 'r')
     
     our_data = [[] for seed in range(10)]
     lstm_data = [[] for seed in range(10)]
@@ -188,11 +187,11 @@ def plot_evolve(length):
         ax.set_title(item)
         ax.set_xlabel('t / s')
         ax.legend()
-    plt.savefig(f'results/1S2F/evolve_test_{length}.pdf', dpi=300)
+    plt.savefig(f'Results/1S2F/evolve_test_{length}.pdf', dpi=300)
     
     item = ['our','lstm','tcn', 'ode']
     for i, data in enumerate([our_data, lstm_data, tcn_data, ode_data]):
-        print(f'{item[i]} | tau[{data[0,0]:.3f}] RMSE={data[0,2]:.4f}, MAE={data[0,3]:.4f}, MAPE={100*data[0,4]:.2f}% | tau[{data[9,0]:.3f}] RMSE={data[9,2]:.4f}, MAE={data[9,3]:.4f}, MAPE={100*data[9,4]:.2f}% | tau[{data[49,0]:.3f}] RMSE={data[49,2]:.4f}, MAE={data[49,3]:.4f}, MAPE={100*data[49,4]:.2f}%')
+        print(f'{item[i]} | tau[{data[0,0]:.1f}] RMSE={data[0,2]:.4f}, MAE={data[0,3]:.4f}, MAPE={100*data[0,4]:.2f}% | tau[{data[9,0]:.1f}] RMSE={data[9,2]:.4f}, MAE={data[9,3]:.4f}, MAPE={100*data[9,4]:.2f}% | tau[{data[49,0]:.1f}] RMSE={data[49,2]:.4f}, MAE={data[49,3]:.4f}, MAPE={100*data[49,4]:.2f}%')
 
 
 if __name__ == '__main__':

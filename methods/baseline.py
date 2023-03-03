@@ -166,7 +166,6 @@ def baseline_test(
         ):
         
     # prepare
-    device = torch.device('cuda:1')
     data_filepath = data_dir + 'tau_' + str(delta_t)
     log_dir = log_dir + f'tau_{tau_s}/seed{random_seed}'
     os.makedirs(log_dir+f"/test/", exist_ok=True)

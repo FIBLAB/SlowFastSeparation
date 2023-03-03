@@ -8,12 +8,11 @@ from tqdm import tqdm
 import scienceplots
 import matplotlib.pyplot as plt;plt.style.use(['science']);plt.rcParams.update({'font.size':16})
 from multiprocessing import Process
-from pytorch_lightning import seed_everything
 import warnings;warnings.simplefilter('ignore')
 
 import models
 from methods import *
-from util import set_cpu_num
+from util import set_cpu_num, seed_everything
 
     
 def ID_subworker(args, tau, random_seed=729, is_print=False):
@@ -61,18 +60,18 @@ def learn_subworker(args, n, random_seed=729, is_print=False, mode='train'):
 
     if mode == 'train':
         # train
-        ckpt_path = args.log_dir + f'tau_{args.tau_s}/seed1/checkpoints/epoch-{args.id_epoch}.ckpt'
-        train_slow_extract_and_evolve(args.system, args.tau_s, args.slow_dim, args.koopman_dim, args.tau_1, n, ckpt_path, is_print, random_seed, args.learn_epoch, args.data_dir, args.log_dir, args.device)
+        ckpt_path = args.id_log_dir + f'tau_{args.tau_s}/seed1/checkpoints/epoch-{args.id_epoch}.ckpt'
+        train_slow_extract_and_evolve(args.system, args.tau_s, args.slow_dim, args.koopman_dim, args.tau_1, n, ckpt_path, is_print, random_seed, args.learn_epoch, args.data_dir, args.learn_log_dir, args.device)
     elif mode == 'test':
         # test evolve
         for i in tqdm(range(1, 50+1)):
             delta_t = round(args.tau_1*i, 3)
             if args.system == '2S2F':
-                MSE, RMSE, MAE, MAPE, c1_mae, c2_mae = test_evolve(args.system, args.tau_s, args.learn_epoch, args.slow_dim, args.koopman_dim, delta_t, i, is_print, random_seed, args.data_dir, args.log_dir, args.device)
+                MSE, RMSE, MAE, MAPE, c1_mae, c2_mae = test_evolve(args.system, args.tau_s, args.learn_epoch, args.slow_dim, args.koopman_dim, delta_t, i, is_print, random_seed, args.data_dir, args.learn_log_dir, args.device)
                 with open(args.result_dir+f'ours_evolve_test_{args.tau_s}.txt','a') as f:
                     f.writelines(f'{delta_t}, {random_seed}, {MSE}, {RMSE}, {MAE}, {MAPE}, {c1_mae}, {c2_mae}\n')
             elif args.system == '1S2F':
-                MSE, RMSE, MAE, MAPE = test_evolve(args.system, args.tau_s, args.learn_epoch, args.slow_dim, args.koopman_dim, delta_t, i, is_print, random_seed, args.data_dir, args.log_dir, args.device)
+                MSE, RMSE, MAE, MAPE = test_evolve(args.system, args.tau_s, args.learn_epoch, args.slow_dim, args.koopman_dim, delta_t, i, is_print, random_seed, args.data_dir, args.learn_log_dir, args.device)
                 with open(args.result_dir+f'ours_evolve_test_{args.tau_s}.txt','a') as f:
                     f.writelines(f'{delta_t}, {random_seed}, {MSE}, {RMSE}, {MAE}, {MAPE}\n')
     else:
@@ -110,7 +109,7 @@ def baseline_subworker(args, is_print=False, random_seed=729, mode='train'):
             model = models.TCN(input_size=3, output_size=3, num_channels=[32,16,8], kernel_size=3, dropout=0.1)
         elif args.model == 'neural_ode':
             model = models.NeuralODE(in_channels=1, feature_dim=3)
-    
+        
     if mode == 'train':
         # train
         baseline_train(model, args.tau_s, args.tau_1, is_print, random_seed, args.baseline_epoch, args.data_dir, args.baseline_log_dir, args.device)
@@ -140,7 +139,7 @@ def Data_Generate(args):
     
     # generate original data
     print('Generating original simulation data')
-    generate_original_data(args.trace_num, args.total_t, args.dt, args.parallel)
+    generate_original_data(args.trace_num, args.total_t, args.dt, save=True, plot=False, parallel=args.parallel)
 
     # generate dataset for ID estimating
     print('Generating training data for ID estimating')
@@ -258,13 +257,14 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--model', type=str, default='ours', help='Model: [ours, lstm, tcn, neural_ode]')
     parser.add_argument('--system', type=str, default='2S2F', help='Dynamical System: [1S2F, 2S2F]')
+    parser.add_argument('--phase', type=str, default='TimeSelection', help='Phase of whole pipeline: TimeSelection or LearnDynamics')
     parser.add_argument('--trace_num', type=int, default=200, help='Number of simulation trajectories')
     parser.add_argument('--total_t', type=float, default=5.1, help='Time length of each simulation trajectories')
     parser.add_argument('--dt', type=float, default=0.01, help='Time step of each simulation trajectories')
     parser.add_argument('--tau_1', type=float, default=0.1, help='params for ID-driven Time Scale Selection')
     parser.add_argument('--tau_N', type=float, default=3.0, help='params for ID-driven Time Scale Selection')
-    parser.add_argument('--tau_s', type=float, default=0.8, help='Approprate time scale for fast-slow separation')  
-    parser.add_argument('--slow_dim', type=int, default=2, help='Intrinsic dimension of slow dynamics')             
+    parser.add_argument('--tau_s', type=float, default=0.8, help='Approprate time scale for fast-slow separation')
+    parser.add_argument('--slow_dim', type=int, default=2, help='Intrinsic dimension of slow dynamics')
     parser.add_argument('--koopman_dim', type=int, default=4, help='Dimension of Koopman invariable space')
     parser.add_argument('--id_epoch', type=int, default=100, help='Max training epoch of ID-driven Time Scale Selection')
     parser.add_argument('--learn_epoch', type=int, default=100, help='Max training epoch of Fast-Slow Learning')
@@ -294,9 +294,11 @@ if __name__ == '__main__':
     Data_Generate(args)
 
     if args.model == 'ours':
-        ID_Estimate(args)
-        Learn_Slow_Fast(args, 'train')
-        Learn_Slow_Fast(args, 'test')
+        if args.phase == 'TimeSelection':
+            ID_Estimate(args)
+        elif args.phase == 'LearnDynamics':
+            Learn_Slow_Fast(args, 'train')
+            Learn_Slow_Fast(args, 'test')
     else:
         Baseline(args, 'train')
         Baseline(args, 'test')

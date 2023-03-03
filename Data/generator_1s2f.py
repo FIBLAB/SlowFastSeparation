@@ -90,7 +90,7 @@ def time_discretization(seed, total_t, dt=None, is_print=False):
     np.savez(f'Data/1S2F/origin/{seed}/data.npz', dt=dt, t=t, X=X, Y=Y, Z=Z)
 
 
-def generate_original_data(trace_num, total_t, dt, parallel):
+def generate_original_data(trace_num, total_t, dt, save=True, plot=False, parallel=False):
     '''
     Generate simulation data.
 
