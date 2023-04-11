@@ -36,11 +36,9 @@ def train_slow_extract_and_evolve(
     # init model
     assert koopman_dim>=slow_dim, f"Value Error, koopman_dim is smaller than slow_dim({koopman_dim}<{slow_dim})"
     if system == '2S2F':
-        model = models.DynamicsEvolver(in_channels=1, feature_dim=4, embed_dim=64, slow_dim=slow_dim, 
-                                       redundant_dim=koopman_dim-slow_dim, tau_s=tau_s, device=device)
+        model = models.DynamicsEvolver(in_channels=1, feature_dim=4, embed_dim=64, slow_dim=slow_dim, redundant_dim=koopman_dim-slow_dim, tau_s=tau_s, device=device)
     elif system == '1S2F':
-        model = models.DynamicsEvolver(in_channels=1, feature_dim=3, embed_dim=64, slow_dim=slow_dim, 
-                                       redundant_dim=koopman_dim-slow_dim, tau_s=tau_s, device=device)
+        model = models.DynamicsEvolver(in_channels=1, feature_dim=3, embed_dim=64, slow_dim=slow_dim, redundant_dim=koopman_dim-slow_dim, tau_s=tau_s, device=device)
     model.apply(models.weights_normal_init)
     model.min = torch.from_numpy(np.loadtxt(data_filepath+"/data_min.txt").astype(np.float32)).unsqueeze(0)
     model.max = torch.from_numpy(np.loadtxt(data_filepath+"/data_max.txt").astype(np.float32)).unsqueeze(0)
@@ -223,8 +221,7 @@ def train_slow_extract_and_evolve(
             slow_reconstruct_loss = MSE_loss(slow_obses, inputs)
             evolve_loss = MSE_loss(total_obses_next, targets)
             all_loss = 0.5*slow_reconstruct_loss + 0.5*evolve_loss + 0.1*adiabatic_loss
-            if is_print: print(f'\rTau[{tau_s}] | epoch[{epoch}/{learn_max_epoch}] | val: adiab_loss={adiabatic_loss:.5f}, \
-                               recons_loss={slow_reconstruct_loss:.5f}, evol_loss={evolve_loss:.5f}', end='')
+            if is_print: print(f'\rTau[{tau_s}] | epoch[{epoch}/{learn_max_epoch}] | val: adiab_loss={adiabatic_loss:.5f}, recons_loss={slow_reconstruct_loss:.5f}, evol_loss={evolve_loss:.5f}', end='')
             
             val_loss.append(all_loss.detach().item())
             
@@ -341,17 +338,18 @@ def test_evolve(
     log_dir = log_dir + f'seed{random_seed}'
 
     # load model
-    batch_size = 128
     if system == '2S2F':
-        model = models.DynamicsEvolver(in_channels=1, feature_dim=4, embed_dim=64, slow_dim=slow_dim, 
-                                       redundant_dim=koopman_dim-slow_dim, tau_s=tau_s, device=device)
+        model = models.DynamicsEvolver(in_channels=1, feature_dim=4, embed_dim=64, slow_dim=slow_dim, redundant_dim=koopman_dim-slow_dim, tau_s=tau_s, device=device)
     elif system == '1S2F':
-        model = models.DynamicsEvolver(in_channels=1, feature_dim=3, embed_dim=64, slow_dim=slow_dim, 
-                                       redundant_dim=koopman_dim-slow_dim, tau_s=tau_s, device=device)
+        model = models.DynamicsEvolver(in_channels=1, feature_dim=3, embed_dim=64, slow_dim=slow_dim, redundant_dim=koopman_dim-slow_dim, tau_s=tau_s, device=device)
     ckpt_path = log_dir+f'/checkpoints/epoch-{ckpt_epoch}.ckpt'
     ckpt = torch.load(ckpt_path)
     model.load_state_dict(ckpt)
     model = model.to(device)
+
+    if is_print:
+        from torchsummary import summary
+        summary(models.DynamicsEvolver(1, 4, 64, slow_dim, koopman_dim-slow_dim, tau_s, device), input_size=(1, 4), batch_size=-1)
 
     if is_print and delta_t==0.1:
         print('Koopman V:')
@@ -361,22 +359,21 @@ def test_evolve(
     
     # dataset
     test_dataset = Dataset(data_filepath, 'test')
-    test_loader = torch.utils.data.DataLoader(dataset=test_dataset, batch_size=batch_size, shuffle=False, drop_last=False)
+    test_loader = torch.utils.data.DataLoader(dataset=test_dataset, batch_size=len(test_dataset), shuffle=False, drop_last=False)
     
     # testing pipeline        
     with torch.no_grad():
-        inputs = []
-        targets = []
-        slow_vars = []
-        slow_obses = []
-        slow_obses_next = []
-        fast_obses_next = []
-        total_obses_next = []
-        slow_vars_next = []
-        slow_vars_truth = []
-        
         model.eval()
+
+        # timing
+        torch.cuda.synchronize()
+        starter, ender = torch.cuda.Event(enable_timing=True), torch.cuda.Event(enable_timing=True)
+        duration = 0
+        
+        # only one iter
         for input, target in test_loader:
+
+            starter.record()
             
             input = model.scale(input.to(device))
             target = model.scale(target.to(device))
@@ -399,26 +396,17 @@ def test_evolve(
             # total obs evolve
             total_obs_next = slow_obs_next + fast_obs_next
 
-            inputs.append(input)
-            targets.append(target)
-            slow_vars.append(slow_var)
-            slow_obses.append(slow_obs)
-            slow_obses_next.append(slow_obs_next)
-            fast_obses_next.append(fast_obs_next)
-            total_obses_next.append(total_obs_next)   
-            slow_vars_next.append(slow_var_next)   
-            slow_vars_truth.append(model.obs2slow(target)[0])  
+            ender.record()
+            torch.cuda.synchronize()  # wait GPU task finished
+            duration = starter.elapsed_time(ender) / len(test_dataset)
         
-        inputs = model.descale(torch.concat(inputs, axis=0)).cpu()
-        slow_obses = model.descale(torch.concat(slow_obses, axis=0)).cpu()
-        slow_obses_next = model.descale(torch.concat(slow_obses_next, axis=0)).cpu()
-        fast_obses_next = model.descale(torch.concat(fast_obses_next, axis=0)).cpu()
-        slow_vars = torch.concat(slow_vars, axis=0).cpu()
-        slow_vars_next = torch.concat(slow_vars_next, axis=0).cpu()
-        slow_vars_truth = torch.concat(slow_vars_truth, axis=0).cpu()
-        
-        targets = torch.concat(targets, axis=0)
-        total_obses_next = torch.concat(total_obses_next, axis=0)
+        inputs = model.descale(input).cpu()
+        slow_obses = model.descale(slow_obs).cpu()
+        slow_obses_next = model.descale(slow_obs_next).cpu()
+        fast_obses_next = model.descale(fast_obs_next).cpu()
+        slow_vars = slow_var.cpu()
+        targets = target
+        total_obses_next = total_obs_next
     
     # metrics
     pred = total_obses_next.detach().cpu().numpy()
@@ -495,6 +483,6 @@ def test_evolve(
     if system == '2S2F':
         c1_evolve_mae = torch.mean(torch.abs(slow_obses_next[:,0,0,0] - true[:,0,0,0]))
         c2_evolve_mae = torch.mean(torch.abs(slow_obses_next[:,0,0,1] - true[:,0,0,1]))
-        return MSE, RMSE, MAE, MAPE, c1_evolve_mae.item(), c2_evolve_mae.item()
+        return MSE, RMSE, MAE, MAPE, c1_evolve_mae.item(), c2_evolve_mae.item(), duration
     elif system == '1S2F':
-        return MSE, RMSE, MAE, MAPE
+        return MSE, RMSE, MAE, MAPE, duration

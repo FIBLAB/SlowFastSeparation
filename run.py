@@ -6,9 +6,9 @@ import torch
 import numpy as np
 from tqdm import tqdm
 import scienceplots
-import matplotlib.pyplot as plt; plt.style.use(['science']); plt.rcParams.update({'font.size':16})
+import matplotlib.pyplot as plt;plt.style.use(['science']);plt.rcParams.update({'font.size':16})
 from multiprocessing import Process
-import warnings; warnings.simplefilter('ignore')
+import warnings;warnings.simplefilter('ignore')
 
 import models
 from methods import *
@@ -36,10 +36,8 @@ def ID_subworker(args, tau, random_seed=729, is_print=False):
     train_time_lagged(args.system, tau, args.id_epoch, is_print, random_seed, args.data_dir, args.id_log_dir, args.device)
 
     # test and calculating ID
-    test_and_save_embeddings_of_time_lagged(args.system, tau, args.id_epoch, None, 
-                                            is_print, random_seed, args.data_dir, args.id_log_dir, args.device)
-    test_and_save_embeddings_of_time_lagged(args.system, tau, args.id_epoch, args.id_log_dir+f"tau_{tau}/seed{random_seed}", 
-                                            is_print, random_seed, args.data_dir, args.id_log_dir, args.device)
+    test_and_save_embeddings_of_time_lagged(args.system, tau, args.id_epoch, None, is_print, random_seed, args.data_dir, args.id_log_dir, args.device)
+    test_and_save_embeddings_of_time_lagged(args.system, tau, args.id_epoch, args.id_log_dir+f"tau_{tau}/seed{random_seed}", is_print, random_seed, args.data_dir, args.id_log_dir, args.device)
 
  
 def learn_subworker(args, n, random_seed=729, is_print=False, mode='train'):
@@ -63,22 +61,21 @@ def learn_subworker(args, n, random_seed=729, is_print=False, mode='train'):
     if mode == 'train':
         # train
         ckpt_path = args.id_log_dir + f'tau_{args.tau_s}/seed1/checkpoints/epoch-{args.id_epoch}.ckpt'
-        train_slow_extract_and_evolve(args.system, args.tau_s, args.slow_dim, args.koopman_dim, args.tau_1, 
-                                      n, ckpt_path, is_print, random_seed, args.learn_epoch, args.data_dir, args.learn_log_dir, args.device)
+        train_slow_extract_and_evolve(args.system, args.tau_s, args.slow_dim, args.koopman_dim, args.tau_1, n, ckpt_path, is_print, random_seed, args.learn_epoch, args.data_dir, args.learn_log_dir, args.device)
     elif mode == 'test':
+        # warm up
+        test_evolve(args.system, args.tau_s, args.learn_epoch, args.slow_dim, args.koopman_dim, round(args.tau_1*1, 3), 1, is_print, random_seed, args.data_dir, args.learn_log_dir, args.device)
         # test evolve
         for i in tqdm(range(1, 50+1)):
             delta_t = round(args.tau_1*i, 3)
             if args.system == '2S2F':
-                MSE, RMSE, MAE, MAPE, c1_mae, c2_mae = test_evolve(args.system, args.tau_s, args.learn_epoch, args.slow_dim, args.koopman_dim, 
-                                                                   delta_t, i, is_print, random_seed, args.data_dir, args.learn_log_dir, args.device)
+                MSE, RMSE, MAE, MAPE, c1_mae, c2_mae, duration = test_evolve(args.system, args.tau_s, args.learn_epoch, args.slow_dim, args.koopman_dim, delta_t, i, is_print, random_seed, args.data_dir, args.learn_log_dir, args.device)
                 with open(args.result_dir+f'ours_evolve_test_{args.tau_s}.txt','a') as f:
-                    f.writelines(f'{delta_t}, {random_seed}, {MSE}, {RMSE}, {MAE}, {MAPE}, {c1_mae}, {c2_mae}\n')
+                    f.writelines(f'{delta_t}, {random_seed}, {MSE}, {RMSE}, {MAE}, {MAPE}, {c1_mae}, {c2_mae}, {duration}\n')
             elif args.system == '1S2F':
-                MSE, RMSE, MAE, MAPE = test_evolve(args.system, args.tau_s, args.learn_epoch, args.slow_dim, args.koopman_dim, 
-                                                   delta_t, i, is_print, random_seed, args.data_dir, args.learn_log_dir, args.device)
+                MSE, RMSE, MAE, MAPE, duration = test_evolve(args.system, args.tau_s, args.learn_epoch, args.slow_dim, args.koopman_dim, delta_t, i, is_print, random_seed, args.data_dir, args.learn_log_dir, args.device)
                 with open(args.result_dir+f'ours_evolve_test_{args.tau_s}.txt','a') as f:
-                    f.writelines(f'{delta_t}, {random_seed}, {MSE}, {RMSE}, {MAE}, {MAPE}\n')
+                    f.writelines(f'{delta_t}, {random_seed}, {MSE}, {RMSE}, {MAE}, {MAPE}, {duration}\n')
     else:
         raise TypeError(f"Wrong mode of {mode}!")
 
@@ -117,20 +114,17 @@ def baseline_subworker(args, is_print=False, random_seed=729, mode='train'):
         
     if mode == 'train':
         # train
-        baseline_train(model, args.tau_s, args.tau_1, is_print, random_seed, 
-                       args.baseline_epoch, args.data_dir, args.baseline_log_dir, args.device)
+        baseline_train(model, args.tau_s, args.tau_1, is_print, random_seed, args.baseline_epoch, args.data_dir, args.baseline_log_dir, args.device)
     else:
         # test evolve
         for i in tqdm(range(1, 50 + 1)):
             delta_t = round(args.tau_1*i, 3)
             if args.system == '2S2F':
-                MSE, RMSE, MAE, MAPE, c1_mae, c2_mae = baseline_test(model, args.system, args.tau_s, args.baseline_epoch, 
-                                                                     delta_t, i, random_seed, args.data_dir, args.baseline_log_dir, args.device)
+                MSE, RMSE, MAE, MAPE, c1_mae, c2_mae = baseline_test(model, args.system, args.tau_s, args.baseline_epoch, delta_t, i, random_seed, args.data_dir, args.baseline_log_dir, args.device)
                 with open(args.result_dir+f'{args.model}_evolve_test_{args.tau_s}.txt','a') as f:
                     f.writelines(f'{delta_t}, {random_seed}, {MSE}, {RMSE}, {MAE}, {MAPE}, {c1_mae}, {c2_mae}\n')
             elif args.system == '1S2F':
-                MSE, RMSE, MAE, MAPE = baseline_test(model, args.system, args.tau_s, args.baseline_epoch, 
-                                                     delta_t, i, random_seed, args.data_dir, args.baseline_log_dir, args.device)
+                MSE, RMSE, MAE, MAPE = baseline_test(model, args.system, args.tau_s, args.baseline_epoch, delta_t, i, random_seed, args.data_dir, args.baseline_log_dir, args.device)
                 with open(args.result_dir+f'{args.model}_evolve_test_{args.tau_s}.txt','a') as f:
                     f.writelines(f'{delta_t}, {random_seed}, {MSE}, {RMSE}, {MAE}, {MAPE}\n')
     
@@ -147,8 +141,7 @@ def Data_Generate(args):
     
     # generate original data
     print('Generating original simulation data')
-    generate_original_data(args.trace_num, args.total_t, args.dt, 
-                           save=True, plot=False, parallel=args.parallel)
+    generate_original_data(args.trace_num, args.total_t, args.dt, save=True, plot=False, parallel=args.parallel)
 
     # generate dataset for ID estimating
     print('Generating training data for ID estimating')
@@ -307,7 +300,7 @@ if __name__ == '__main__':
             ID_Estimate(args)
         elif args.phase == 'LearnDynamics':
             Learn_Slow_Fast(args, 'train')
-            Learn_Slow_Fast(args, 'test')
+            # Learn_Slow_Fast(args, 'test')
     else:
         Baseline(args, 'train')
         Baseline(args, 'test')

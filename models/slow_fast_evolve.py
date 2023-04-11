@@ -45,15 +45,14 @@ class LSTM_OPT(nn.Module):
             hidden_size=hidden_dim, 
             num_layers=layer_num, 
             dropout=0.01, 
-            batch_first=True # input: (batch_size, squences, features)
+            batch_first=True  # input: (batch_size, squences, features)
             )
-        
-        # (batchsize, hidden_dim)-->(batchsize, channel_num*feature_dim)
-        self.fc = nn.Linear(hidden_dim, in_channels*feature_dim)
 
-        # mechanism new
-        self.eta_head = nn.Linear(hidden_dim, 1)
-        self.xi_head = nn.Linear(hidden_dim, in_channels*feature_dim)
+        self.eta_head = nn.Sequential(
+            nn.Linear(hidden_dim, 1),
+            nn.Sigmoid()  # constraint to be greater than 0
+        )
+        self.ksi_head = nn.Linear(hidden_dim, in_channels*feature_dim)
         
         # (batchsize, channel_num*feature_dim)-->(batchsize,1,channel_num,feature_dim)
         self.unflatten = nn.Unflatten(-1, (in_channels, feature_dim))
@@ -66,9 +65,9 @@ class LSTM_OPT(nn.Module):
         x = self.flatten(x)
         _, (h, c)  = self.cell(x, (h0, c0))
 
-        eta = self.eta_head(h[-1]).unsqueeze(-2) # (batch_size, 1, 1)
-        xi = self.xi_head(h[-1]).unsqueeze(-2) # (batch_size, 1, in_channels*feature_dim)
-        y = torch.abs(x) * torch.exp(-(eta+self.tau_s)) * xi # (batch_size, 1, in_channels*feature_dim)
+        eta = self.eta_head(h[-1]).unsqueeze(-2)  # (batch_size, 1, 1)
+        ksi = self.ksi_head(h[-1]).unsqueeze(-2)  # (batch_size, 1, in_channels*feature_dim)
+        y = torch.abs(x) * torch.exp(-(eta+self.tau_s)) * ksi  # (batch_size, 1, in_channels*feature_dim)
 
         y = self.unflatten(y)
                 
@@ -89,7 +88,7 @@ class DynamicsEvolver(nn.Module):
             nn.Tanh(),
             nn.Dropout(p=0.01),
             nn.Linear(64, embed_dim, bias=True),
-            nn.Tanh(),
+            # nn.Tanh(),
         )
         
         # (batchsize, embed_dim)-->(batchsize, slow_dim)
@@ -98,7 +97,7 @@ class DynamicsEvolver(nn.Module):
             nn.Tanh(),
             nn.Dropout(p=0.01),
             nn.Linear(64, slow_dim, bias=True),
-            nn.Tanh(),
+            # nn.Tanh(),
         )
 
         # (batchsize, slow_dim)-->(batchsize, redundant_dim)
@@ -107,7 +106,7 @@ class DynamicsEvolver(nn.Module):
             nn.Tanh(),
             nn.Dropout(p=0.01),
             nn.Linear(32, redundant_dim, bias=True),
-            nn.Tanh(),
+            # nn.Tanh(),
         )
         
         # (batchsize, slow_dim)-->(batchsize,1,channel_num,feature_dim)
@@ -121,12 +120,12 @@ class DynamicsEvolver(nn.Module):
             nn.Tanh(),
             nn.Dropout(p=0.01),
             nn.Linear(64, in_channels*feature_dim, bias=True),
-            nn.Tanh(),
+            # nn.Tanh(),
             nn.Unflatten(-1, (1, in_channels, feature_dim))
         )
         
         self.K_opt = Koopman_OPT(slow_dim+redundant_dim)
-        self.lstm = LSTM_OPT(in_channels, feature_dim, hidden_dim=64, layer_num=2, tau_s=tau_s, device=device)
+        self.lstm = LSTM_OPT(in_channels, feature_dim, hidden_dim=32, layer_num=1, tau_s=tau_s, device=device)
 
         # scale inside the model
         self.register_buffer('min', torch.zeros(in_channels, feature_dim, dtype=torch.float32))

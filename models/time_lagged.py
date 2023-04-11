@@ -14,7 +14,7 @@ class TimeLaggedAE(nn.Module):
             nn.Tanh(),
             nn.Dropout(p=0.01),
             nn.Linear(64, embed_dim, bias=True),
-            nn.Tanh(),
+            # nn.Tanh(),
         )
         
         # (batchsize, embed_dim)-->(batchsize,1,channel_num,feature_dim)
@@ -23,7 +23,7 @@ class TimeLaggedAE(nn.Module):
             nn.Tanh(),
             nn.Dropout(p=0.01),
             nn.Linear(64, in_channels*feature_dim, bias=True),
-            nn.Tanh(),
+            # nn.Tanh(),
             nn.Unflatten(-1, (1, in_channels, feature_dim))
         )
         

@@ -12,7 +12,7 @@ class NeuralODEfunc(nn.Module):
         super(NeuralODEfunc, self).__init__()
         self.tanh = nn.Tanh()
         self.fc1 = nn.Linear(obs_dim, nhidden)
-        self.fc2 = nn.Linear(nhidden, nhidden)
+        # self.fc2 = nn.Linear(nhidden, nhidden)
         self.fc3 = nn.Linear(nhidden, obs_dim)
         self.nfe = 0
 
@@ -20,8 +20,8 @@ class NeuralODEfunc(nn.Module):
         self.nfe += 1
         out = self.fc1(x)
         out = self.tanh(out)
-        out = self.fc2(out)
-        out = self.tanh(out)
+        # out = self.fc2(out)
+        # out = self.tanh(out)
         out = self.fc3(out)
         return out
 
