@@ -1,7 +1,6 @@
 *.pdf
 *.pickle
 *.h5
-*.png
 *.pth
 *.txt
 *.gif
