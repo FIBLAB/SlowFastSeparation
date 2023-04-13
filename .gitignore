@@ -8,7 +8,6 @@
 *.npz
 *.npy
 *.jpg
-*.csv
 *.ckpt
 *.pyc
 *.0*
