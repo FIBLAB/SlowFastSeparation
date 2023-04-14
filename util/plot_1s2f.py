@@ -111,36 +111,46 @@ def plot_id_per_tau(tau_list, id_epoch):
     plt.savefig('logs/1S2F/TimeSelection/id_per_tau.pdf', dpi=300)
 
 
-def plot_1s2f_autocorr():
+def plot_1s2f_autocorr(totol_p, trace_num=20):
 
-    data = np.load('Data/1S2F/origin/1/data.npz')
-    X = np.array(data['X'])[:, np.newaxis]
-    Y = np.array(data['Y'])[:, np.newaxis]
-    Z = np.array(data['Z'])[:, np.newaxis]
+    corrX, corrY, corrZ = [[] for _ in range(trace_num)], [[] for _ in range(trace_num)], [[] for _ in range(trace_num)]
+    for i in range(1, trace_num+1):
 
-    data = pd.DataFrame(np.concatenate((X,Y,Z), axis=-1), columns=['X', 'Y', 'Z'])
+        data = np.load(f'Data/1S2F/origin-total_25.1/{i}/data.npz')
+        X = np.array(data['X'])
+        Y = np.array(data['Y'])
+        Z = np.array(data['Z'])
+        
+        lag_list = np.arange(0, int(totol_p), 30)
+        from tqdm import tqdm
+        for lag in tqdm(lag_list):
+            if lag == 0:
+                corrX[i-1].append(1)
+                corrY[i-1].append(1)
+                corrZ[i-1].append(1)
+            else:
+                corrX[i-1].append(np.corrcoef(X[:-lag], X[lag:])[0,1])
+                corrY[i-1].append(np.corrcoef(Y[:-lag], Y[lag:])[0,1])
+                corrZ[i-1].append(np.corrcoef(Z[:-lag], Z[lag:])[0,1])
     
-    corrX, corrY, corrZ = [], [], []
-    lag_list = np.arange(0, 7*100, 30)
-    from tqdm import tqdm
-    for lag in tqdm(lag_list):
-        corrX.append(data['X'].autocorr(lag=lag))
-        corrY.append(data['Y'].autocorr(lag=lag))
-        corrZ.append(data['Z'].autocorr(lag=lag))
+    corrX = np.mean(corrX, axis=0)
+    corrY = np.mean(corrY, axis=0)
+    corrZ = np.mean(corrZ, axis=0)
+
     import scienceplots
     plt.style.use(['science'])
     plt.figure(figsize=(6,6))
     plt.rcParams.update({'font.size':16})
-    plt.plot(lag_list*1e-2, np.array(corrX), marker="o", markersize=6, label=r'$X$')
-    plt.plot(lag_list*1e-2, np.array(corrY), marker="^", markersize=6, label=r'$Y$')
-    plt.plot(lag_list*1e-2, np.array(corrZ), marker="D", markersize=6, label=r'$Z$')
+    plt.plot(lag_list*1e-2, corrX, marker="o", markersize=6, label=r'$X$')
+    plt.plot(lag_list*1e-2, corrY, marker="^", markersize=6, label=r'$Y$')
+    plt.plot(lag_list*1e-2, corrZ, marker="D", markersize=6, label=r'$Z$')
     plt.xlabel(r'$t/s$', fontsize=18)
     plt.ylabel('Autocorrelation coefficient', fontsize=18)
     plt.xticks(fontsize=16)
     plt.yticks(fontsize=16)
     plt.legend()
     # plt.subplots_adjust(bottom=0.15, left=0.2)
-    plt.savefig('corr.pdf', dpi=300)
+    plt.savefig('1s2f_autocorr.png', dpi=300)
 
 
 def plot_evolve(length):
@@ -196,7 +206,196 @@ def plot_evolve(length):
               tau[{data[49,0]:.1f}] RMSE={data[49,2]:.4f}, MAE={data[49,3]:.4f}, MAPE={100*data[49,4]:.2f}%')
 
 
+def plot_result_per_slow_id():
+
+    slow_id_list = [1,2,3,4,5]
+    seed_list = [1,2,3,4,5]
+
+    results = []
+    for slow_id in slow_id_list:
+        koopman_id = 5
+    
+        data = open(f'Results/1S2F/slow_{slow_id}_koopman_{koopman_id}/fast_1/ours_evolve_test_3.0.txt', 'r')
+    
+        tmp = [[] for seed in seed_list]
+        for line in data.readlines():
+            tau = float(line.split(',')[0])
+            seed = int(line.split(',')[1])
+            mse = float(line.split(',')[2])
+            rmse = float(line.split(',')[3])
+            mae = float(line.split(',')[4])
+            mape = float(line.split(',')[5])
+            duration = float(line.split(',')[6])
+            
+            if seed in seed_list:
+                tmp[seed_list.index(seed)].append([tau,mse,rmse,mae,mape,duration])
+
+        results.append(np.mean(tmp, axis=0))
+    results = np.array(results)
+    
+    plt.figure(figsize=(16,16))
+    for i, item in enumerate(['mse', 'rmse', 'mae', 'mape']):
+        ax = plt.subplot(2,2,i+1)
+        for slow_id in slow_id_list:
+            ax.plot(results[slow_id-1,:,0], results[slow_id-1,:,i+1], label=f'slow ID = {slow_id}')
+        ax.set_title(item)
+        ax.set_xlabel('t / s')
+        ax.legend()
+    plt.savefig(f'Results/1S2F/error_per_slow_id.pdf', dpi=300)
+
+    plt.figure(figsize=(12,5))
+    for i, index in enumerate([0, 9, 49]):
+        ax = plt.subplot(1,3,i+1)
+        # ax.plot(results[:,index,1], label='mse')
+        # ax.plot(results[:,index,2], label='rmse')
+        # ax.plot(results[:,index,3], label='mae')
+        ax.plot(results[:,index,4], label='mape')
+        ax.plot(results[:,index,5], label='duration')
+        ax.set_xlabel('slow ID')
+        ax.set_title(f'tau = {results[0,index,0]}')
+        ax.legend()
+    plt.savefig(f'Results/1S2F/duration_per_slow_id.pdf', dpi=300)
+    
+    for slow_id, result in zip(slow_id_list, results):
+        # print(f"slow id={slow_id} | tau[{result[0,0]:.1f}] RMSE={result[0,2]:.4f}, MAE={result[0,3]:.4f}, MAPE={100*result[0,4]:.2f}%, duration={result[0,5]:.5f}ms | tau[{result[9,0]:.1f}] RMSE={result[9,2]:.4f}, MAE={result[9,3]:.4f}, MAPE={100*result[9,4]:.2f}%, duration={result[9,5]:.5f}ms | tau[{result[49,0]:.1f}] RMSE={result[49,2]:.4f}, MAE={result[49,3]:.4f}, MAPE={100*result[49,4]:.2f}%, duration={result[49,5]:.5f}ms")
+        # print(f"slow id={slow_id} | tau[{result[0,0]:.1f}] RMSE={result[0,2]:.4f}, MAE={result[0,3]:.4f}, MAPE={100*result[0,4]:.2f}% | tau[{result[9,0]:.1f}] RMSE={result[9,2]:.4f}, MAE={result[9,3]:.4f}, MAPE={100*result[9,4]:.2f}% | tau[{result[49,0]:.1f}] RMSE={result[49,2]:.4f}, MAE={result[49,3]:.4f}, MAPE={100*result[49,4]:.2f}%")
+        print(f"slow id={slow_id} | tau[{result[0,0]:.1f}] MAPE={100*result[0,4]:.2f}% | tau[{result[9,0]:.1f}] MAPE={100*result[9,4]:.2f}% | tau[{result[49,0]:.1f}] MAPE={100*result[49,4]:.2f}%")
+
+
+def plot_result_per_koopman_id():
+
+    koopman_id_list = [1,2,3,4,5,6]
+    seed_list = [1,2,3]
+
+    results = []
+    for koopman_id in koopman_id_list:
+        slow_id = 1
+    
+        data = open(f'Results/1S2F/slow_{slow_id}_koopman_{koopman_id}/ours_evolve_test_3.0.txt', 'r')
+    
+        tmp = [[] for seed in seed_list]
+        for line in data.readlines():
+            tau = float(line.split(',')[0])
+            seed = int(line.split(',')[1])
+            mse = float(line.split(',')[2])
+            rmse = float(line.split(',')[3])
+            mae = float(line.split(',')[4])
+            mape = float(line.split(',')[5])
+            duration = float(line.split(',')[6])
+            
+            if seed in seed_list:
+                tmp[seed_list.index(seed)].append([tau,mse,rmse,mae,mape,duration])
+
+        results.append(np.mean(tmp, axis=0))
+    results = np.array(results)
+    
+    plt.figure(figsize=(16,16))
+    for i, item in enumerate(['mse', 'rmse', 'mae', 'mape']):
+        ax = plt.subplot(2,2,i+1)
+        for koopman_id in koopman_id_list:
+            ax.plot(results[koopman_id-slow_id,:,0], results[koopman_id-slow_id,:,i+1], label=f'koopman ID = {koopman_id}')
+        ax.set_title(item)
+        ax.set_xlabel('t / s')
+        ax.legend()
+    plt.savefig(f'Results/1S2F/eror_per_koopman_id.pdf', dpi=300)
+
+    plt.figure(figsize=(12,5))
+    for i, index in enumerate([0, 9, 49]):
+        ax = plt.subplot(1,3,i+1)
+        # ax.plot(results[:,index,1], label='mse')
+        # ax.plot(results[:,index,2], label='rmse')
+        # ax.plot(results[:,index,3], label='mae')
+        ax.plot(results[:,index,4], label='mape')
+        ax.plot(results[:,index,5], label='duration')
+        ax.set_xlabel('koopman ID')
+        ax.set_title(f'tau = {results[0,index,0]}')
+        ax.legend()
+    plt.savefig(f'Results/1S2F/duration_per_koopman_id.pdf', dpi=300)
+    
+    for koopman_id, result in zip(koopman_id_list, results):
+        # print(f"koop id={koopman_id} | tau[{result[0,0]:.1f}] RMSE={result[0,2]:.4f}, MAE={result[0,3]:.4f}, MAPE={100*result[0,4]:.2f}%, duration={result[0,5]:.5f}ms | tau[{result[9,0]:.1f}] RMSE={result[9,2]:.4f}, MAE={result[9,3]:.4f}, MAPE={100*result[9,4]:.2f}%, duration={result[9,5]:.5f}ms | tau[{result[49,0]:.1f}] RMSE={result[49,2]:.4f}, MAE={result[49,3]:.4f}, MAPE={100*result[49,4]:.2f}%, duration={result[49,5]:.5f}ms")
+        # print(f"koop id={koopman_id} | tau[{result[0,0]:.1f}] RMSE={result[0,2]:.4f}, MAE={result[0,3]:.4f}, MAPE={100*result[0,4]:.2f}% | tau[{result[9,0]:.1f}] RMSE={result[9,2]:.4f}, MAE={result[9,3]:.4f}, MAPE={100*result[9,4]:.2f}% | tau[{result[49,0]:.1f}] RMSE={result[49,2]:.4f}, MAE={result[49,3]:.4f}, MAPE={100*result[49,4]:.2f}%")
+        print(f"koop id={koopman_id} | tau[{result[0,0]:.1f}] MAPE={100*result[0,4]:.2f}% | tau[{result[9,0]:.1f}] MAPE={100*result[9,4]:.2f}% | tau[{result[49,0]:.1f}] MAPE={100*result[49,4]:.2f}%")
+
+
+def plot_whether_fast():
+    
+    data_fast = open(f'Results/1S2F/slow_{1}_koopman_{1}/fast_1/ours_evolve_test_3.0.txt', 'r')
+    data_no_fast = open(f'Results/1S2F/slow_{1}_koopman_{1}/fast_0/ours_evolve_test_3.0.txt', 'r')
+    data_lstm = open(f'Results/1S2F/lstm_evolve_test_3.0.txt', 'r')
+
+    results = []
+    seed_list = [1,2,3]
+
+    tmp = [[] for seed in seed_list]
+    for line in data_fast.readlines():
+        tau = float(line.split(',')[0])
+        seed = int(line.split(',')[1])
+        mse = float(line.split(',')[2])
+        rmse = float(line.split(',')[3])
+        mae = float(line.split(',')[4])
+        mape = float(line.split(',')[5])
+        duration = float(line.split(',')[6])
+        
+        if seed in seed_list:
+            tmp[seed_list.index(seed)].append([tau,mse,rmse,mae,mape,duration])
+    results.append(np.mean(tmp, axis=0))
+
+    tmp = [[] for seed in seed_list]
+    for line in data_no_fast.readlines():
+        tau = float(line.split(',')[0])
+        seed = int(line.split(',')[1])
+        mse = float(line.split(',')[2])
+        rmse = float(line.split(',')[3])
+        mae = float(line.split(',')[4])
+        mape = float(line.split(',')[5])
+        duration = float(line.split(',')[6])
+        
+        if seed in seed_list:
+            tmp[seed_list.index(seed)].append([tau,mse,rmse,mae,mape,duration])
+    results.append(np.mean(tmp, axis=0))
+
+    seed_list = [1,2,3,4,5,6,7,8,9,10]
+    tmp = [[] for seed in seed_list]
+    for line in data_lstm.readlines():
+        tau = float(line.split(',')[0])
+        seed = int(line.split(',')[1])
+        mse = float(line.split(',')[2])
+        rmse = float(line.split(',')[3])
+        mae = float(line.split(',')[4])
+        mape = float(line.split(',')[5])
+        duration = float(line.split(',')[6])
+        
+        if seed in seed_list:
+            tmp[seed_list.index(seed)].append([tau,mse,rmse,mae,mape,duration])
+    results.append(np.mean(tmp, axis=0))
+
+    results = np.array(results)
+
+    plt.figure(figsize=(12,5))
+    ax = plt.subplot(1,2,1)
+    ax.plot(results[0,:,0], results[0,:,4], label='with fast')
+    ax.plot(results[1,:,0], results[1,:,4], label='no fast')
+    ax.set_xlabel('tau/s')
+    ax.set_title('MAPE')
+    ax.legend()
+    ax = plt.subplot(1,2,2)
+    ax.plot(results[0,:,0], results[0,:,5], label='with fast')
+    ax.plot(results[1,:,0], results[1,:,5], label='no fast')
+    ax.set_xlabel('tau/s')
+    ax.set_title('Average inference duration(ms/sample)')
+    ax.legend()
+    plt.savefig(f'Results/1S2F/comp_whether_fast.png', dpi=300)
+    
+    for i, result in enumerate(results):
+        # print(f"{['fast   ', 'no fast'][i]} | tau[{result[0,0]:.1f}] RMSE={result[0,2]:.4f}, MAE={result[0,3]:.4f}, MAPE={100*result[0,4]:.2f}%, duration={result[0,8]:.5f}ms | tau[{result[9,0]:.1f}] RMSE={result[9,2]:.4f}, MAE={result[9,3]:.4f}, MAPE={100*result[9,4]:.2f}%, duration={result[9,8]:.5f}ms | tau[{result[49,0]:.1f}] RMSE={result[49,2]:.4f}, MAE={result[49,3]:.4f}, MAPE={100*result[49,4]:.2f}%, duration={result[49,8]:.5f}ms")
+        print(f"{['origin ', 'no fast', 'lstm   '][i]} | tau[{result[0,0]:.1f}] MAPE={100*result[0,4]:.2f}%, duration={result[0,5]:.5f}ms | tau[{result[9,0]:.1f}] MAPE={100*result[9,4]:.2f}%, duration={result[9,5]:.5f}ms | tau[{result[49,0]:.1f}] MAPE={100*result[49,4]:.2f}%, duration={result[49,5]:.5f}ms")
+
+
 if __name__ == '__main__':
     
-    # plot_1s2f_autocorr()
+    # plot_1s2f_autocorr(totol_p=15*100)
     plot_evolve(3.0)
+    # plot_result_per_slow_id()
+    # plot_result_per_koopman_id()
+    # plot_whether_fast()

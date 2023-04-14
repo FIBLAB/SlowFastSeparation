@@ -1,7 +1,8 @@
 import numpy as np
 import pandas as pd
 from tqdm import tqdm
-import matplotlib.pyplot as plt
+import scienceplots
+import matplotlib.pyplot as plt; plt.style.use(['science'])
 
 
 def plot_epoch_test_log(tau, max_epoch):
@@ -148,7 +149,7 @@ def plot_2s2f_autocorr():
 
     simdata = np.load('Data/2S2F/origin/origin.npz')
     
-    trace_num = 3
+    trace_num = 200
     corrC1, corrC2, corrC3, corrC4 = [[] for _ in range(trace_num)], [[] for _ in range(trace_num)], \
         [[] for _ in range(trace_num)], [[] for _ in range(trace_num)]
     for trace_id in range(trace_num):
@@ -160,7 +161,7 @@ def plot_2s2f_autocorr():
 
         data = pd.DataFrame(np.concatenate((c1,c2,c3,c4), axis=-1), columns=['c1','c2','c3','c4'])
         
-        lag_list = np.arange(0, 5*100, 15)
+        lag_list = np.arange(0, 510, 10)
         for lag in tqdm(lag_list):
             corrC1[trace_id].append(data['c1'].autocorr(lag=lag))
             corrC2[trace_id].append(data['c2'].autocorr(lag=lag))
@@ -172,8 +173,6 @@ def plot_2s2f_autocorr():
     corrC3 = np.mean(corrC3, axis=0)
     corrC4 = np.mean(corrC4, axis=0)
 
-    import scienceplots
-    plt.style.use(['science'])
     plt.figure(figsize=(6,6))
     plt.rcParams.update({'font.size':16})
     plt.plot(lag_list*1e-2, np.array(corrC1), marker="o", markersize=6, label=r'$c_1$')
@@ -186,7 +185,7 @@ def plot_2s2f_autocorr():
     plt.yticks(fontsize=16)
     plt.legend()
     # plt.subplots_adjust(bottom=0.15, left=0.2)
-    plt.savefig('corr.pdf', dpi=300)
+    plt.savefig('2s2f_autocorr.png', dpi=300)
     
     
 def plot_evolve(length):
@@ -224,9 +223,6 @@ def plot_evolve(length):
     lstm_data = np.mean(np.array(lstm_data), axis=0)
     tcn_data = np.mean(np.array(tcn_data), axis=0)
     ode_data = np.mean(np.array(ode_data), axis=0)
-
-    import scienceplots
-    plt.style.use(['science'])
     
     plt.figure(figsize=(16,16))
     for i, item in enumerate(['mse', 'rmse', 'mae', 'mape']):
@@ -234,7 +230,7 @@ def plot_evolve(length):
         ax.plot(our_data[:,0], our_data[:,i+1], label='our')
         ax.plot(lstm_data[:,0], lstm_data[:,i+1], label='lstm')
         ax.plot(tcn_data[:,0], tcn_data[:,i+1], label='tcn')
-        # ax.plot(ode_data[:,0], ode_data[:,i+1], label='ode')
+        ax.plot(ode_data[:,0], ode_data[:,i+1], label='ode')
         ax.set_title(item)
         ax.set_xlabel('t / s')
         ax.legend()
@@ -251,14 +247,14 @@ def plot_evolve(length):
         ax.set_xlabel(r'$t / s$', fontsize=18)
         ax.set_ylabel(item, fontsize=18)
         ax.legend(loc='lower right', bbox_to_anchor=(0.98, 0.1))
-        from mpl_toolkits.axes_grid1.inset_locator import mark_inset
-        from mpl_toolkits.axes_grid1.inset_locator import inset_axes
-        axins = ax.inset_axes((0.16, 0.55, 0.47, 0.35))
-        axins.plot(our_data[:int(len(our_data)*0.1):1,0], our_data[:int(len(our_data)*0.1):1,2*(i+1)], marker="o", markersize=6, label='our')
-        axins.plot(lstm_data[:int(len(lstm_data)*0.1):1,0], lstm_data[:int(len(lstm_data)*0.1):1,2*(i+1)], marker="^", markersize=6, label='lstm')
-        axins.plot(tcn_data[:int(len(tcn_data)*0.1):1,0], tcn_data[:int(len(tcn_data)*0.1):1,2*(i+1)], marker="D", markersize=6, label='tcn')
+        # from mpl_toolkits.axes_grid1.inset_locator import mark_inset
+        # from mpl_toolkits.axes_grid1.inset_locator import inset_axes
+        # axins = ax.inset_axes((0.16, 0.55, 0.47, 0.35))
+        # axins.plot(our_data[:int(len(our_data)*0.1):1,0], our_data[:int(len(our_data)*0.1):1,2*(i+1)], marker="o", markersize=6, label='our')
+        # axins.plot(lstm_data[:int(len(lstm_data)*0.1):1,0], lstm_data[:int(len(lstm_data)*0.1):1,2*(i+1)], marker="^", markersize=6, label='lstm')
+        # axins.plot(tcn_data[:int(len(tcn_data)*0.1):1,0], tcn_data[:int(len(tcn_data)*0.1):1,2*(i+1)], marker="D", markersize=6, label='tcn')
         # axins.plot(ode_data[:int(len(ode_data)*0.1):1,0], ode_data[:int(len(ode_data)*0.1):1,2*(i+1)], marker="+", markersize=6, label='ode')
-        mark_inset(ax, axins, loc1=3, loc2=1, fc="none", ec='k', lw=1)
+        # mark_inset(ax, axins, loc1=3, loc2=1, fc="none", ec='k', lw=1)
         plt.xticks(fontsize=16)
         plt.yticks(fontsize=16)
         plt.savefig(f'Results/2S2F/evolve_comp_{item}.pdf', dpi=300)
@@ -267,16 +263,15 @@ def plot_evolve(length):
     plt.rcParams.update({'font.size':16})
     ax.plot(our_data[::2,0], our_data[::2,5], marker="o", markersize=6, label='Our Model')
     ax.plot(lstm_data[::2,0], lstm_data[::2,5], marker="^", markersize=6, label='LSTM')
-    # ax.plot(tcn_data[::2,0], tcn_data[::2,5], marker="D", markersize=6, label='TCN')
+    ax.plot(tcn_data[::2,0], tcn_data[::2,5], marker="D", markersize=6, label='TCN')
     ax.plot(ode_data[::2,0], ode_data[::2,5], marker="+", markersize=6, label='Neural ODE')
     ax.legend()
-    from mpl_toolkits.axes_grid1.inset_locator import mark_inset
-    from mpl_toolkits.axes_grid1.inset_locator import inset_axes
-    axins = ax.inset_axes((0.13, 0.43, 0.43, 0.3))
-    axins.plot(our_data[:int(len(our_data)*0.6):3,0], our_data[:int(len(our_data)*0.6):3,5], marker="o", markersize=6, label='Our Model')
-    axins.plot(lstm_data[:int(len(lstm_data)*0.6):3,0], lstm_data[:int(len(lstm_data)*0.6):3,5], marker="^", markersize=6, label='LSTM')
-    mark_inset(ax, axins, loc1=3, loc2=1, fc="none", ec='k', lw=1)
-
+    # from mpl_toolkits.axes_grid1.inset_locator import mark_inset
+    # from mpl_toolkits.axes_grid1.inset_locator import inset_axes
+    # axins = ax.inset_axes((0.13, 0.43, 0.43, 0.3))
+    # axins.plot(our_data[:int(len(our_data)*0.6):3,0], our_data[:int(len(our_data)*0.6):3,5], marker="o", markersize=6, label='Our Model')
+    # axins.plot(lstm_data[:int(len(lstm_data)*0.6):3,0], lstm_data[:int(len(lstm_data)*0.6):3,5], marker="^", markersize=6, label='LSTM')
+    # mark_inset(ax, axins, loc1=3, loc2=1, fc="none", ec='k', lw=1)
     plt.xlabel(r'$t / s$', fontsize=18)
     plt.ylabel('MAE', fontsize=18)
     plt.subplots_adjust(bottom=0.15)
@@ -296,13 +291,212 @@ def plot_evolve(length):
     plt.yticks(fontsize=16)
     plt.savefig(f'Results/2S2F/our_slow_evolve_mae.pdf', dpi=300)
     
-    item = ['our','lstm','tcn', 'ode', 'our old']
+    item = ['our','lstm','tcn', 'ode']
     for i, data in enumerate([our_data, lstm_data, tcn_data, ode_data]):
         print(f'{item[i]} | tau[{data[0,0]:.1f}] RMSE={data[0,2]:.4f}, MAE={data[0,3]:.4f}, MAPE={100*data[0,4]:.2f}% | \
               tau[{data[9,0]:.1f}] RMSE={data[9,2]:.4f}, MAE={data[9,3]:.4f}, MAPE={100*data[9,4]:.2f}% | \
               tau[{data[49,0]:.1f}] RMSE={data[49,2]:.4f}, MAE={data[49,3]:.4f}, MAPE={100*data[49,4]:.2f}%')
+
+
+def plot_result_per_id():
+
+    slow_id_list = [1,2,3,4,5]
+    seed_list = [1,2,3,4,5]
+
+    results = []
+    for slow_id in slow_id_list:
+        koopman_id = 5
+        
+        data = open(f'Results/2S2F/slow_{slow_id}_koopman_{koopman_id}/fast_1/ours_evolve_test_1.0.txt', 'r')
     
+        tmp = [[] for seed in seed_list]
+        for line in data.readlines():
+            tau = float(line.split(',')[0])
+            seed = int(line.split(',')[1])
+            mse = float(line.split(',')[2])
+            rmse = float(line.split(',')[3])
+            mae = float(line.split(',')[4])
+            mape = float(line.split(',')[5])
+            c1_mae = float(line.split(',')[6])
+            c2_mae = float(line.split(',')[7])
+            duration = float(line.split(',')[8])
+            
+            if seed in seed_list:
+                tmp[seed_list.index(seed)].append([tau,mse,rmse,mae,mape,np.mean([c1_mae,c2_mae]),c1_mae,c2_mae,duration])
+
+        results.append(np.mean(tmp, axis=0))
+    results = np.array(results)
+    
+    plt.figure(figsize=(16,16))
+    for i, item in enumerate(['mse', 'rmse', 'mae', 'mape']):
+        ax = plt.subplot(2,2,i+1)
+        for slow_id in slow_id_list:
+            ax.plot(results[slow_id-1,:,0], results[slow_id-1,:,i+1], label=f'slow ID = {slow_id}')
+        ax.set_title(item)
+        ax.set_xlabel('t / s')
+        ax.legend()
+    plt.savefig(f'Results/2S2F/error_per_slow_id.pdf', dpi=300)
+
+    plt.figure(figsize=(12,5))
+    for i, index in enumerate([0, 9, 49]):
+        ax = plt.subplot(1,3,i+1)
+        # ax.plot(results[:,index,1], label='mse')
+        # ax.plot(results[:,index,2], label='rmse')
+        # ax.plot(results[:,index,3], label='mae')
+        ax.plot(results[:,index,4], label='mape')
+        ax.plot(results[:,index,8], label='duration')
+        ax.set_xlabel('slow ID')
+        ax.set_title(f'tau = {results[0,index,0]}')
+        ax.legend()
+    plt.savefig(f'Results/2S2F/duration_per_slow_id.pdf', dpi=300)
+    
+    for slow_id, result in zip(slow_id_list, results):
+        # print(f"slow id={slow_id} | tau[{result[0,0]:.1f}] RMSE={result[0,2]:.4f}, MAE={result[0,3]:.4f}, MAPE={100*result[0,4]:.2f}%, duration={result[0,8]:.5f}ms | tau[{result[9,0]:.1f}] RMSE={result[9,2]:.4f}, MAE={result[9,3]:.4f}, MAPE={100*result[9,4]:.2f}%, duration={result[9,8]:.5f}ms | tau[{result[49,0]:.1f}] RMSE={result[49,2]:.4f}, MAE={result[49,3]:.4f}, MAPE={100*result[49,4]:.2f}%, duration={result[49,8]:.5f}ms")
+        # print(f"slow id={slow_id} | tau[{result[0,0]:.1f}] RMSE={result[0,2]:.4f}, MAE={result[0,3]:.4f}, MAPE={100*result[0,4]:.2f}% | tau[{result[9,0]:.1f}] RMSE={result[9,2]:.4f}, MAE={result[9,3]:.4f}, MAPE={100*result[9,4]:.2f}% | tau[{result[49,0]:.1f}] RMSE={result[49,2]:.4f}, MAE={result[49,3]:.4f}, MAPE={100*result[49,4]:.2f}%")
+        print(f"slow id={slow_id} | tau[{result[0,0]:.1f}] MAPE={100*result[0,4]:.2f}% | tau[{result[9,0]:.1f}] MAPE={100*result[9,4]:.2f}% | tau[{result[49,0]:.1f}] MAPE={100*result[49,4]:.2f}%")
+
+
+def plot_result_per_koopman_id():
+
+    koopman_id_list = [2,3,4,5,6,7]
+    seed_list = [1]
+
+    results = []
+    for koopman_id in koopman_id_list:
+        slow_id = 2
+    
+        data = open(f'Results/2S2F/slow_{slow_id}_koopman_{koopman_id}/ours_evolve_test_1.0.txt', 'r')
+    
+        tmp = [[] for seed in seed_list]
+        for line in data.readlines():
+            tau = float(line.split(',')[0])
+            seed = int(line.split(',')[1])
+            mse = float(line.split(',')[2])
+            rmse = float(line.split(',')[3])
+            mae = float(line.split(',')[4])
+            mape = float(line.split(',')[5])
+            c1_mae = float(line.split(',')[6])
+            c2_mae = float(line.split(',')[7])
+            duration = float(line.split(',')[8])
+            
+            if seed in seed_list:
+                tmp[seed_list.index(seed)].append([tau,mse,rmse,mae,mape,np.mean([c1_mae,c2_mae]),c1_mae,c2_mae,duration])
+
+        results.append(np.mean(tmp, axis=0))
+    results = np.array(results)
+    
+    plt.figure(figsize=(16,16))
+    for i, item in enumerate(['mse', 'rmse', 'mae', 'mape']):
+        ax = plt.subplot(2,2,i+1)
+        for koopman_id in koopman_id_list:
+            ax.plot(results[koopman_id-slow_id,:,0], results[koopman_id-slow_id,:,i+1], label=f'koopman ID = {koopman_id}')
+        ax.set_title(item)
+        ax.set_xlabel('t / s')
+        ax.legend()
+    plt.savefig(f'Results/2S2F/error_per_koopman_id.pdf', dpi=300)
+
+    plt.figure(figsize=(12,5))
+    for i, index in enumerate([0, 9, 49]):
+        ax = plt.subplot(1,3,i+1)
+        # ax.plot(results[:,index,1], label='mse')
+        # ax.plot(results[:,index,2], label='rmse')
+        # ax.plot(results[:,index,3], label='mae')
+        ax.plot(results[:,index,4], label='mape')
+        ax.plot(results[:,index,8], label='duration')
+        ax.set_xlabel('koopman ID')
+        ax.set_title(f'tau = {results[0,index,0]}')
+        ax.legend()
+    plt.savefig(f'Results/2S2F/duration_per_koopman_id.pdf', dpi=300)
+    
+    for koopman_id, result in zip(koopman_id_list, results):
+        # print(f"koop id={koopman_id} | tau[{result[0,0]:.1f}] RMSE={result[0,2]:.4f}, MAE={result[0,3]:.4f}, MAPE={100*result[0,4]:.2f}%, duration={result[0,8]:.5f}ms | tau[{result[9,0]:.1f}] RMSE={result[9,2]:.4f}, MAE={result[9,3]:.4f}, MAPE={100*result[9,4]:.2f}%, duration={result[9,8]:.5f}ms | tau[{result[49,0]:.1f}] RMSE={result[49,2]:.4f}, MAE={result[49,3]:.4f}, MAPE={100*result[49,4]:.2f}%, duration={result[49,8]:.5f}ms")
+        # print(f"koop id={koopman_id} | tau[{result[0,0]:.1f}] RMSE={result[0,2]:.4f}, MAE={result[0,3]:.4f}, MAPE={100*result[0,4]:.2f}% | tau[{result[9,0]:.1f}] RMSE={result[9,2]:.4f}, MAE={result[9,3]:.4f}, MAPE={100*result[9,4]:.2f}% | tau[{result[49,0]:.1f}] RMSE={result[49,2]:.4f}, MAE={result[49,3]:.4f}, MAPE={100*result[49,4]:.2f}%")
+        print(f"koop id={koopman_id} | tau[{result[0,0]:.1f}] MAPE={100*result[0,4]:.2f}% | tau[{result[9,0]:.1f}] MAPE={100*result[9,4]:.2f}% | tau[{result[49,0]:.1f}] MAPE={100*result[49,4]:.2f}%")
+    
+
+def plot_whether_fast():
+    
+    data_fast = open(f'Results/2S2F/slow_{2}_koopman_{2}/fast_1/ours_evolve_test_1.0.txt', 'r')
+    data_no_fast = open(f'Results/2S2F/slow_{2}_koopman_{2}/fast_0/ours_evolve_test_1.0.txt', 'r')
+    data_lstm = open(f'Results/2S2F/lstm_evolve_test_0.8.txt', 'r')
+
+    results = []
+    seed_list = [1,2,3]
+
+    tmp = [[] for seed in seed_list]
+    for line in data_fast.readlines():
+        tau = float(line.split(',')[0])
+        seed = int(line.split(',')[1])
+        mse = float(line.split(',')[2])
+        rmse = float(line.split(',')[3])
+        mae = float(line.split(',')[4])
+        mape = float(line.split(',')[5])
+        c1_mae = float(line.split(',')[6])
+        c2_mae = float(line.split(',')[7])
+        duration = float(line.split(',')[8])
+        
+        if seed in seed_list:
+            tmp[seed_list.index(seed)].append([tau,mse,rmse,mae,mape,np.mean([c1_mae,c2_mae]),c1_mae,c2_mae,duration])
+    results.append(np.mean(tmp, axis=0))
+
+    tmp = [[] for seed in seed_list]
+    for line in data_no_fast.readlines():
+        tau = float(line.split(',')[0])
+        seed = int(line.split(',')[1])
+        mse = float(line.split(',')[2])
+        rmse = float(line.split(',')[3])
+        mae = float(line.split(',')[4])
+        mape = float(line.split(',')[5])
+        c1_mae = float(line.split(',')[6])
+        c2_mae = float(line.split(',')[7])
+        duration = float(line.split(',')[8])
+        
+        if seed in seed_list:
+            tmp[seed_list.index(seed)].append([tau,mse,rmse,mae,mape,np.mean([c1_mae,c2_mae]),c1_mae,c2_mae,duration])
+    results.append(np.mean(tmp, axis=0))
+
+    tmp = [[] for seed in seed_list]
+    for line in data_lstm.readlines():
+        tau = float(line.split(',')[0])
+        seed = int(line.split(',')[1])
+        mse = float(line.split(',')[2])
+        rmse = float(line.split(',')[3])
+        mae = float(line.split(',')[4])
+        mape = float(line.split(',')[5])
+        c1_mae = float(line.split(',')[6])
+        c2_mae = float(line.split(',')[7])
+        duration = float(line.split(',')[8])
+        
+        if seed in seed_list:
+            tmp[seed_list.index(seed)].append([tau,mse,rmse,mae,mape,np.mean([c1_mae,c2_mae]),c1_mae,c2_mae,duration])
+    results.append(np.mean(tmp, axis=0))
+
+    results = np.array(results)
+
+    plt.figure(figsize=(12,5))
+    ax = plt.subplot(1,2,1)
+    ax.plot(results[0,:,0], results[0,:,4], label='with fast')
+    ax.plot(results[1,:,0], results[1,:,4], label='no fast')
+    ax.set_xlabel('tau/s')
+    ax.set_title('MAPE')
+    ax.legend()
+    ax = plt.subplot(1,2,2)
+    ax.plot(results[0,:,0], results[0,:,8], label='with fast')
+    ax.plot(results[1,:,0], results[1,:,8], label='no fast')
+    ax.set_xlabel('tau/s')
+    ax.set_title('Average inference duration(ms/sample)')
+    ax.legend()
+    plt.savefig(f'Results/2S2F/comp_whether_fast.png', dpi=300)
+    
+    for i, result in enumerate(results):
+        # print(f"{['fast   ', 'no fast'][i]} | tau[{result[0,0]:.1f}] RMSE={result[0,2]:.4f}, MAE={result[0,3]:.4f}, MAPE={100*result[0,4]:.2f}%, duration={result[0,8]:.5f}ms | tau[{result[9,0]:.1f}] RMSE={result[9,2]:.4f}, MAE={result[9,3]:.4f}, MAPE={100*result[9,4]:.2f}%, duration={result[9,8]:.5f}ms | tau[{result[49,0]:.1f}] RMSE={result[49,2]:.4f}, MAE={result[49,3]:.4f}, MAPE={100*result[49,4]:.2f}%, duration={result[49,8]:.5f}ms")
+        print(f"{['origin ', 'no fast', 'lstm   '][i]} | tau[{result[0,0]:.1f}] MAPE={100*result[0,4]:.2f}%, duration={result[0,8]:.5f}ms | tau[{result[9,0]:.1f}] MAPE={100*result[9,4]:.2f}%, duration={result[9,8]:.5f}ms | tau[{result[49,0]:.1f}] MAPE={100*result[49,4]:.2f}%, duration={result[49,8]:.5f}ms")
+
 
 if __name__ == '__main__':
     
+    # plot_2s2f_autocorr()
     plot_evolve(0.8)
+    # plot_result_per_id()
+    # plot_result_per_koopman_id()
+    # plot_whether_fast()

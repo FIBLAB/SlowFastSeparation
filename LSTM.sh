@@ -4,7 +4,7 @@
 # trace_num=200
 # total_t=5.1
 # dt=0.01
-# baseline_epoch=100
+# baseline_epoch=50
 # seed_num=10
 # tau_1=0.1
 # tau_s=0.8

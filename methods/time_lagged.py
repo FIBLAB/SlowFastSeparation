@@ -20,7 +20,8 @@ def train_time_lagged(
         random_seed=729, 
         data_dir='Data/2S2F/data/', 
         log_dir='logs/2S2F/TimeSelection/', 
-        device=torch.device('cpu')
+        device=torch.device('cpu'),
+        embed_dim=64
         ):
     
     # prepare
@@ -31,9 +32,9 @@ def train_time_lagged(
     
     # init model
     if system == '2S2F':
-        model = models.TimeLaggedAE(in_channels=1, feature_dim=4, embed_dim=64)
+        model = models.TimeLaggedAE(in_channels=1, feature_dim=4, embed_dim=embed_dim)
     elif system == '1S2F':
-        model = models.TimeLaggedAE(in_channels=1, feature_dim=3, embed_dim=64)
+        model = models.TimeLaggedAE(in_channels=1, feature_dim=3, embed_dim=embed_dim)
     model.apply(models.weights_normal_init)
     model.min = torch.from_numpy(np.loadtxt(data_filepath+"/data_min.txt").astype(np.float32)).unsqueeze(0)
     model.max = torch.from_numpy(np.loadtxt(data_filepath+"/data_max.txt").astype(np.float32)).unsqueeze(0)
@@ -116,7 +117,8 @@ def test_and_save_embeddings_of_time_lagged(
         random_seed=729, 
         data_dir='Data/2S2F/data/', 
         log_dir='logs/2S2F/TimeSelection/', 
-        device=torch.device('cpu')
+        device=torch.device('cpu'),
+        embed_dim=64
         ):
     
     # prepare
@@ -128,9 +130,9 @@ def test_and_save_embeddings_of_time_lagged(
     
     # init model
     if system == '2S2F':
-        model = models.TimeLaggedAE(in_channels=1, feature_dim=4, embed_dim=64)
+        model = models.TimeLaggedAE(in_channels=1, feature_dim=4, embed_dim=embed_dim)
     elif system == '1S2F':
-        model = models.TimeLaggedAE(in_channels=1, feature_dim=3, embed_dim=64)
+        model = models.TimeLaggedAE(in_channels=1, feature_dim=3, embed_dim=embed_dim)
     if checkpoint_filepath is None: # not trained
         model.apply(models.weights_normal_init)
         model.min = torch.from_numpy(np.loadtxt(data_filepath+"/data_min.txt").astype(np.float32)).unsqueeze(0)

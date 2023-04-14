@@ -54,7 +54,7 @@ def baseline_train(
         model.train()
         for input, _, internl_units in train_loader:
             
-            input = model.scale(input.to(device)) # (batchsize,1,channel_num,feature_dim)
+            input = model.scale(input.to(device)) # (batchsize, 1, channel_num, feature_dim)
 
             loss = 0
             for i in range(1, len(internl_units)):
@@ -71,10 +71,10 @@ def baseline_train(
                         input = torch.concat([input[:,1:], output[:,0].unsqueeze(1)], dim=1)
                         output = model(input)
                 elif model.__class__.__name__ == 'NeuralODE':
-                    t = torch.tensor([tau_1], device=device)
-                    output = model(input, t)
+                    t = torch.tensor([0., tau_1], device=device)
+                    output = model(input, t)[:, -1:]
                     for _ in range(1, i):
-                        output = model(output, t)
+                        output = model(output, t)[:, -1:]
                 
                 loss += MSE_loss(output, unit)
             
@@ -84,7 +84,7 @@ def baseline_train(
             
             # record loss
             losses.append(loss.detach().item())
-            
+
         train_loss.append(np.mean(losses[0]))
         
         # validate
@@ -103,8 +103,8 @@ def baseline_train(
                 elif model.__class__.__name__ == 'TCN':
                     output = model(input)
                 elif model.__class__.__name__ == 'NeuralODE':
-                    t = torch.tensor([tau_s-tau_1], device=device)
-                    output = model(input, t)
+                    t = torch.tensor([0., tau_s-tau_1], device=device)
+                    output = model(input, t)[:, -1:]
 
                 # record results
                 outputs.append(output.cpu())
@@ -171,7 +171,6 @@ def baseline_test(
     os.makedirs(log_dir+f"/test/", exist_ok=True)
 
     # load model
-    batch_size = 128
     ckpt_path = log_dir+f'/checkpoints/epoch-{ckpt_epoch}.ckpt'
     ckpt = torch.load(ckpt_path)
     model.load_state_dict(ckpt)
@@ -179,15 +178,21 @@ def baseline_test(
     
     # dataset
     test_dataset = Dataset(data_filepath, 'test')
-    test_loader = torch.utils.data.DataLoader(dataset=test_dataset, batch_size=batch_size, shuffle=False, drop_last=False)
+    test_loader = torch.utils.data.DataLoader(dataset=test_dataset, batch_size=len(test_dataset), shuffle=False, drop_last=False)
     
     # testing pipeline        
     with torch.no_grad():
-        targets = []
-        outputs = []
-        
+
+        # timing
+        torch.cuda.synchronize()
+        starter, ender = torch.cuda.Event(enable_timing=True), torch.cuda.Event(enable_timing=True)
+        duration = 0
+
         model.eval()
         for input, target in test_loader:
+
+            starter.record()
+
             input = model.scale(input.to(device))
             target = model.scale(target.to(device))
 
@@ -201,16 +206,17 @@ def baseline_test(
                     input = torch.concat([input[:,1:], output[:,0].unsqueeze(1)], dim=1)
                     output = model(input)
             elif model.__class__.__name__ == 'NeuralODE':
-                t = torch.tensor([delta_t/n], dtype=torch.float32, device=device)
-                output = model(input, t)
+                t = torch.tensor([0., delta_t/n], dtype=torch.float32, device=device)
+                output = model(input, t)[:, -1:]
                 for _ in range(1, n):
-                    output = model(output, t)
+                    output = model(output, t)[:, -1:]
 
-            targets.append(target)
-            outputs.append(output)
-        
-        targets = torch.concat(targets, axis=0)
-        outputs = torch.concat(outputs, axis=0)
+            ender.record()
+            torch.cuda.synchronize()  # wait GPU task finished
+            duration = starter.elapsed_time(ender) / len(test_dataset)
+
+        targets = target
+        outputs = output
         
     # metrics
     pred = outputs.detach().cpu().numpy()
@@ -238,6 +244,6 @@ def baseline_test(
     if system == '2S2F':
         c1_evolve_mae = np.mean(np.abs(pred[:,0,0,0] - true[:,0,0,0]))
         c2_evolve_mae = np.mean(np.abs(pred[:,0,0,1] - true[:,0,0,1]))
-        return MSE, RMSE, MAE, MAPE, c1_evolve_mae, c2_evolve_mae
+        return MSE, RMSE, MAE, MAPE, c1_evolve_mae, c2_evolve_mae, duration
     elif system == '1S2F':
-        return MSE, RMSE, MAE, MAPE
+        return MSE, RMSE, MAE, MAPE, duration
