@@ -3,7 +3,8 @@ import os
 import numpy as np
 import torch
 from torch import nn
-import matplotlib.pyplot as plt
+import scienceplots
+import matplotlib.pyplot as plt; plt.style.use(['science']); plt.rcParams.update({'font.size':16})
 from Data.dataset import Dataset
 
 
@@ -52,11 +53,14 @@ def baseline_train(
         
         # train
         model.train()
+        counter = 0
         for input, _, internl_units in train_loader:
+            counter += 1
             
             input = model.scale(input.to(device)) # (batchsize, 1, channel_num, feature_dim)
 
             loss = 0
+            t = [0.]
             for i in range(1, len(internl_units)):
                 
                 unit = model.scale(internl_units[i].to(device)) # t+i
@@ -65,19 +69,20 @@ def baseline_train(
                     output = model(input, device)
                     for _ in range(1, i):
                         output = model(output, device)
+                    loss += MSE_loss(output, unit)
                 elif model.__class__.__name__ == 'TCN':
                     output = model(input)
                     for _ in range(1, i):
                         input = torch.concat([input[:,1:], output[:,0].unsqueeze(1)], dim=1)
                         output = model(input)
+                    loss += MSE_loss(output, unit)
                 elif model.__class__.__name__ == 'NeuralODE':
                     t = torch.tensor([0., tau_1], device=device)
                     output = model(input, t)[:, -1:]
                     for _ in range(1, i):
                         output = model(output, t)[:, -1:]
-                
-                loss += MSE_loss(output, unit)
-            
+                    loss += MSE_loss(output, unit)
+
             optimizer.zero_grad()
             loss.backward()
             optimizer.step()
@@ -118,8 +123,8 @@ def baseline_train(
             loss = MSE_loss(outputs, targets)
             if is_print: print(f'\rTau[{tau_s}] | epoch[{epoch}/{max_epoch}] | val-mse={loss:.5f}', end='')
                         
-            # plot per 5 epoch
-            if epoch % 5 == 0:
+            # plot per epoch
+            if epoch % 1 == 0:
                 
                 os.makedirs(log_dir+f"/val/epoch-{epoch}/", exist_ok=True)
                 

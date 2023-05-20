@@ -1,6 +1,6 @@
 # SlowFastSeparation
 
-A python  implementation of the submitted paper in KDD'23: "Learning Slow and Fast System Dynamics via Automatic Separation of Time Scales".
+A python  implementation of the KDD'23 paper: "Learning Slow and Fast System Dynamics via Automatic Separation of Time Scales".
 
 ## Requirements
 - Python 3.10
@@ -12,6 +12,7 @@ A python  implementation of the submitted paper in KDD'23: "Learning Slow and Fa
 - tqdm
 - scikit-dimension
 - torchdiffeq
+- torchsummary
 
 ## Usage
 

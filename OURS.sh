@@ -1,6 +1,6 @@
 #--------------------------------2S2F--------------------------------
-# phase=TimeSelection
-phase=LearnDynamics
+phase=TimeSelection
+# phase=LearnDynamics
 tau_s=1.0
 slow_dim=2
 koopman_dim=2
@@ -18,11 +18,11 @@ learn_epoch=150
 seed_num=10
 tau_1=0.1
 tau_N=3.0
-device=cuda
+device=cpu
 gpu_id=0
 cpu_num=1
 data_dir=Data/$system/data/
-id_log_dir=logs/$system/TimeSelection/
+id_log_dir=logs/$system/TimeSelection/embed_dim_${embed_dim}/
 learn_log_dir=logs/$system/LearnDynamics/slow_${slow_dim}_koopman_${koopman_dim}/
 result_dir=Results/$system/slow_${slow_dim}_koopman_${koopman_dim}/fast_${fast}/
 
@@ -51,7 +51,7 @@ result_dir=Results/$system/slow_${slow_dim}_koopman_${koopman_dim}/fast_${fast}/
 # gpu_id=1
 # cpu_num=1
 # data_dir=Data/$system/data/
-# id_log_dir=logs/$system/TimeSelection/
+# id_log_dir=logs/$system/TimeSelection/embed_dim_${embed_dim}/
 # learn_log_dir=logs/$system/LearnDynamics/slow_${slow_dim}_koopman_${koopman_dim}/
 # result_dir=Results/$system/slow_${slow_dim}_koopman_${koopman_dim}/fast_${fast}/
 

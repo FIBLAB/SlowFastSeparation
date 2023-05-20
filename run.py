@@ -129,12 +129,12 @@ def baseline_subworker(args, is_print=False, random_seed=729, mode='train'):
             delta_t = round(args.tau_1*i, 3)
             if args.system == '2S2F':
                 MSE, RMSE, MAE, MAPE, c1_mae, c2_mae, duration = baseline_test(model, args.system, args.tau_s, args.baseline_epoch, 
-                                                                     delta_t, i, random_seed, args.data_dir, args.baseline_log_dir, args.device)
+                                                                               delta_t, i, random_seed, args.data_dir, args.baseline_log_dir, args.device)
                 with open(args.result_dir+f'{args.model}_evolve_test_{args.tau_s}.txt','a') as f:
                     f.writelines(f'{delta_t}, {random_seed}, {MSE}, {RMSE}, {MAE}, {MAPE}, {c1_mae}, {c2_mae}, {duration}\n')
             elif args.system == '1S2F':
                 MSE, RMSE, MAE, MAPE, duration = baseline_test(model, args.system, args.tau_s, args.baseline_epoch, 
-                                                     delta_t, i, random_seed, args.data_dir, args.baseline_log_dir, args.device)
+                                                               delta_t, i, random_seed, args.data_dir, args.baseline_log_dir, args.device)
                 with open(args.result_dir+f'{args.model}_evolve_test_{args.tau_s}.txt','a') as f:
                     f.writelines(f'{delta_t}, {random_seed}, {MSE}, {RMSE}, {MAE}, {MAPE}, {duration}\n')
     
@@ -151,8 +151,7 @@ def Data_Generate(args):
     
     # generate original data
     print('Generating original simulation data')
-    generate_original_data(args.trace_num, args.total_t, args.dt, 
-                           save=True, plot=False, parallel=args.parallel)
+    generate_original_data(args.trace_num, args.total_t, args.dt, save=True, plot=False, parallel=args.parallel)
 
     # generate dataset for ID estimating
     print('Generating training data for ID estimating')
@@ -198,8 +197,8 @@ def ID_Estimate(args):
         pass
 
     # plot ID curve
-    [plot_epoch_test_log(round(tau,2), max_epoch=args.id_epoch+1) for tau in T]
-    plot_id_per_tau(T, np.arange(args.id_epoch-5, args.id_epoch+1, 1))
+    [plot_epoch_test_log(round(tau,2), args.id_epoch+1, args.embed_dim) for tau in T]
+    plot_id_per_tau(T, np.arange(args.id_epoch-10, args.id_epoch+1, 1), args.embed_dim)
     
     if 'cuda' in args.device: torch.cuda.empty_cache()
     print('\nID Estimate Over')

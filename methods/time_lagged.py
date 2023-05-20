@@ -4,7 +4,7 @@ import torch
 from torch import nn
 import numpy as np
 import scienceplots
-import matplotlib.pyplot as plt;plt.style.use(['science']);plt.rcParams.update({'font.size':16})
+import matplotlib.pyplot as plt; plt.style.use(['science']); plt.rcParams.update({'font.size':16})
 import warnings;warnings.simplefilter('ignore')
 
 import models

@@ -1,10 +1,10 @@
 import numpy as np
 import pandas as pd
 import scienceplots
-import matplotlib.pyplot as plt;plt.style.use(['science'])
+import matplotlib.pyplot as plt;plt.style.use(['science']); plt.rcParams.update({'font.size':16})
 
 
-def plot_epoch_test_log(tau, max_epoch):
+def plot_epoch_test_log(tau, max_epoch, embed_dim):
 
     class MSE():
         def __init__(self, tau):
@@ -14,7 +14,7 @@ def plot_epoch_test_log(tau, max_epoch):
             self.mse_z = [[] for _ in range(max_epoch)]
             self.LB_id = [[] for _ in range(max_epoch)]
 
-    fp = open(f'logs/1S2F/TimeSelection/tau_{tau}/test_log.txt', 'r')
+    fp = open(f'logs/1S2F/TimeSelection/embed_dim_{embed_dim}/tau_{tau}/test_log.txt', 'r')
     items = []
     for line in fp.readlines():
         tau = float(line[:-1].split(',')[0])
@@ -75,11 +75,11 @@ def plot_epoch_test_log(tau, max_epoch):
     plt.close()
 
 
-def plot_id_per_tau(tau_list, id_epoch):
+def plot_id_per_tau(tau_list, id_epoch, embed_dim):
 
     id_per_tau = [[] for _ in tau_list]
     for i, tau in enumerate(tau_list):
-        fp = open(f'logs/1S2F/TimeSelection/tau_{round(tau,2)}/test_log.txt', 'r')
+        fp = open(f'logs/1S2F/TimeSelection/embed_dim_{embed_dim}/tau_{round(tau,2)}/test_log.txt', 'r')
         for line in fp.readlines():
             seed = int(line[:-1].split(',')[1])
             epoch = int(line[:-1].split(',')[5])
@@ -108,7 +108,7 @@ def plot_id_per_tau(tau_list, id_epoch):
     plt.xlabel(r'$\tau / s$', fontsize=18)
     plt.ylabel('Intrinsic dimensionality', fontsize=18)
     plt.subplots_adjust(bottom=0.15)
-    plt.savefig('logs/1S2F/TimeSelection/id_per_tau.pdf', dpi=300)
+    plt.savefig(f'logs/1S2F/TimeSelection/embed_dim_{embed_dim}/id_per_tau.pdf', dpi=300)
 
 
 def plot_1s2f_autocorr(totol_p, trace_num=20):
@@ -137,20 +137,17 @@ def plot_1s2f_autocorr(totol_p, trace_num=20):
     corrY = np.mean(corrY, axis=0)
     corrZ = np.mean(corrZ, axis=0)
 
-    import scienceplots
-    plt.style.use(['science'])
     plt.figure(figsize=(6,6))
-    plt.rcParams.update({'font.size':16})
     plt.plot(lag_list*1e-2, corrX, marker="o", markersize=6, label=r'$X$')
     plt.plot(lag_list*1e-2, corrY, marker="^", markersize=6, label=r'$Y$')
     plt.plot(lag_list*1e-2, corrZ, marker="D", markersize=6, label=r'$Z$')
-    plt.xlabel(r'$t/s$', fontsize=18)
+    plt.xlabel(r'$\tau/s$', fontsize=18)
     plt.ylabel('Autocorrelation coefficient', fontsize=18)
     plt.xticks(fontsize=16)
     plt.yticks(fontsize=16)
     plt.legend()
     # plt.subplots_adjust(bottom=0.15, left=0.2)
-    plt.savefig('1s2f_autocorr.png', dpi=300)
+    plt.savefig('1s2f_autocorr.pdf', dpi=300)
 
 
 def plot_evolve(length):
@@ -195,7 +192,7 @@ def plot_evolve(length):
         ax.plot(tcn_data[:,0], tcn_data[:,i+1], label='tcn')
         ax.plot(ode_data[:,0], ode_data[:,i+1], label='ode')
         ax.set_title(item)
-        ax.set_xlabel('t / s')
+        ax.set_xlabel(r'\tau / s', fontsize=18)
         ax.legend()
     plt.savefig(f'Results/1S2F/evolve_test_{length}.pdf', dpi=300)
     
@@ -372,19 +369,20 @@ def plot_whether_fast():
 
     results = np.array(results)
 
-    plt.figure(figsize=(12,5))
+    plt.figure(figsize=(9,4))
     ax = plt.subplot(1,2,1)
-    ax.plot(results[0,:,0], results[0,:,4], label='with fast')
-    ax.plot(results[1,:,0], results[1,:,4], label='no fast')
-    ax.set_xlabel('tau/s')
-    ax.set_title('MAPE')
+    ax.plot(results[0,:,0], results[0,:,4], label='with fast', marker='o', markersize=4)
+    ax.plot(results[1,:,0], results[1,:,4], label='no fast', marker='^', markersize=4)
+    ax.set_xlabel('tau/s', fontsize=16)
+    ax.set_ylabel('MAPE', fontsize=16)
     ax.legend()
     ax = plt.subplot(1,2,2)
-    ax.plot(results[0,:,0], results[0,:,5], label='with fast')
-    ax.plot(results[1,:,0], results[1,:,5], label='no fast')
-    ax.set_xlabel('tau/s')
-    ax.set_title('Average inference duration(ms/sample)')
+    ax.plot(results[0,:,0], results[0,:,5], label='with fast', marker='o', markersize=4)
+    ax.plot(results[1,:,0], results[1,:,5], label='no fast', marker='^', markersize=4)
+    ax.set_xlabel('tau/s', fontsize=16)
+    ax.set_ylabel('Inference duration(ms)', fontsize=16)
     ax.legend()
+    plt.subplots_adjust(wspace=0.3, hspace=0.3)
     plt.savefig(f'Results/1S2F/comp_whether_fast.png', dpi=300)
     
     for i, result in enumerate(results):
